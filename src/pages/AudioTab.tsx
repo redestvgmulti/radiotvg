@@ -4,6 +4,7 @@ import EnvironmentSelector from '@/components/EnvironmentSelector';
 import LiveBadge from '@/components/LiveBadge';
 import SponsorCarousel from '@/components/SponsorCarousel';
 import { useRadioStore } from '@/stores/useRadioStore';
+import logoRadio from '@/assets/logo-radio-tvg.png';
 
 const AudioTab = () => {
   const { isLive } = useRadioStore();
@@ -17,9 +18,11 @@ const AudioTab = () => {
     >
       {/* Minimal Header */}
       <header className="flex items-center justify-between px-5 pt-4 pb-2">
-        <h1 className="text-lg font-display font-bold text-foreground tracking-tight">
-          Rádio TVG
-        </h1>
+        <img
+          src={logoRadio}
+          alt="Rádio TVG"
+          className="h-8 sm:h-9 md:h-10 w-auto object-contain"
+        />
         {isLive && <LiveBadge />}
       </header>
 
