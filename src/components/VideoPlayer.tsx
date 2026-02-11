@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import Hls from 'hls.js';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, Maximize, Minimize, Volume2, VolumeX, ArrowLeft } from 'lucide-react';
+import { Play, Pause, Maximize, Minimize, Volume2, VolumeX, ArrowLeft, PictureInPicture2 } from 'lucide-react';
 import LiveBadge from '@/components/LiveBadge';
 
 interface VideoPlayerProps {
@@ -25,7 +25,28 @@ const VideoPlayer = ({ src, title, isLive = false, poster, onClose }: VideoPlaye
   const [currentTime, setCurrentTime] = useState(0);
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isPip, setIsPip] = useState(false);
+  const [pipSupported, setPipSupported] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Check PiP support
+  useEffect(() => {
+    setPipSupported('pictureInPictureEnabled' in document && document.pictureInPictureEnabled);
+  }, []);
+
+  // PiP events
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const onEnter = () => setIsPip(true);
+    const onLeave = () => setIsPip(false);
+    video.addEventListener('enterpictureinpicture', onEnter);
+    video.addEventListener('leavepictureinpicture', onLeave);
+    return () => {
+      video.removeEventListener('enterpictureinpicture', onEnter);
+      video.removeEventListener('leavepictureinpicture', onLeave);
+    };
+  }, []);
 
   // Init HLS
   useEffect(() => {
@@ -115,6 +136,18 @@ const VideoPlayer = ({ src, title, isLive = false, poster, onClose }: VideoPlaye
       await document.exitFullscreen();
       setIsFullscreen(false);
     }
+  };
+
+  const togglePip = async () => {
+    const video = videoRef.current;
+    if (!video) return;
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      } else {
+        await video.requestPictureInPicture();
+      }
+    } catch {}
   };
 
   const seek = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -234,6 +267,14 @@ const VideoPlayer = ({ src, title, isLive = false, poster, onClose }: VideoPlaye
                           <Volume2 className="h-3.5 w-3.5 text-white" />
                         )}
                       </button>
+                      {pipSupported && (
+                        <button
+                          onClick={togglePip}
+                          className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
+                        >
+                          <PictureInPicture2 className={`h-3.5 w-3.5 ${isPip ? 'text-primary' : 'text-white'}`} />
+                        </button>
+                      )}
                       <button
                         onClick={toggleFullscreen}
                         className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
