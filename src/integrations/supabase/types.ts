@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      programs: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          end_time: string
+          host: string
+          id: string
+          is_active: boolean
+          name: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          host?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          host?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       radio_settings: {
         Row: {
           category: string
