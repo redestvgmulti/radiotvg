@@ -17,6 +17,7 @@ export interface RadioState {
   volume: number;
   currentEnvironmentSlug: string;
   isLive: boolean;
+  isVideoActive: boolean;
   environments: StreamEnvironment[];
   environmentsLoaded: boolean;
   currentTrack: {
@@ -27,8 +28,10 @@ export interface RadioState {
   setPlaying: (playing: boolean) => void;
   setVolume: (volume: number) => void;
   setEnvironment: (slug: string) => void;
+  setVideoActive: (active: boolean) => void;
   togglePlay: () => void;
   loadEnvironments: () => Promise<void>;
+  loadLiveStatus: () => Promise<void>;
   getCurrentEnvironment: () => StreamEnvironment | undefined;
   getCurrentStreamUrl: () => string;
 }
@@ -37,7 +40,8 @@ export const useRadioStore = create<RadioState>((set, get) => ({
   isPlaying: false,
   volume: 0.8,
   currentEnvironmentSlug: '',
-  isLive: true,
+  isLive: false,
+  isVideoActive: false,
   environments: [],
   environmentsLoaded: false,
   currentTrack: {
@@ -58,6 +62,7 @@ export const useRadioStore = create<RadioState>((set, get) => ({
       },
     });
   },
+  setVideoActive: (active) => set({ isVideoActive: active }),
   togglePlay: () => set((s) => ({ isPlaying: !s.isPlaying })),
   loadEnvironments: async () => {
     const { data } = await supabase
@@ -78,6 +83,28 @@ export const useRadioStore = create<RadioState>((set, get) => ({
         album: 'Rádio TVG',
       },
     });
+  },
+  loadLiveStatus: async () => {
+    // Fetch initial
+    const { data } = await supabase
+      .from('radio_settings')
+      .select('value')
+      .eq('key', 'video_is_live')
+      .maybeSingle();
+    set({ isLive: data?.value === 'true' });
+
+    // Subscribe to realtime changes
+    supabase
+      .channel('live-status')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'radio_settings', filter: 'key=eq.video_is_live' },
+        (payload) => {
+          const newVal = (payload.new as { value?: string })?.value;
+          set({ isLive: newVal === 'true' });
+        }
+      )
+      .subscribe();
   },
   getCurrentEnvironment: () => {
     const state = get();

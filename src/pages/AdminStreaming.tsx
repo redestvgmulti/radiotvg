@@ -68,8 +68,8 @@ const AdminStreaming = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="flex items-center gap-3 px-4 py-3 border-b border-border">
+    <>
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
         <button onClick={() => navigate('/admin')} className="h-7 w-7 rounded-md bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-3.5 w-3.5" />
         </button>
@@ -77,7 +77,7 @@ const AdminStreaming = () => {
           <h1 className="text-sm font-bold text-foreground">Streaming</h1>
           <p className="text-[10px] text-muted-foreground">Áudio · Ambientes</p>
         </div>
-      </header>
+      </div>
 
       <div className="max-w-md mx-auto px-4 py-4">
         {loading ? (
@@ -86,7 +86,6 @@ const AdminStreaming = () => {
           <div className="space-y-2">
             {environments.map((env) => (
               <div key={env.id} className="rounded-lg border border-border bg-card overflow-hidden">
-                {/* Row */}
                 <div className="flex items-center gap-2.5 px-3 py-2.5">
                   <div className={`w-1.5 h-8 rounded-full flex-shrink-0 ${env.is_active ? 'bg-green-500' : 'bg-muted-foreground/20'}`} />
                   <div className="flex-1 min-w-0">
@@ -105,7 +104,6 @@ const AdminStreaming = () => {
                   </div>
                 </div>
 
-                {/* Edit panel */}
                 <AnimatePresence>
                   {editingId === env.id && (
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
@@ -127,7 +125,7 @@ const AdminStreaming = () => {
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 };
 

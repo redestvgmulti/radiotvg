@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import HeroPlayer from '@/components/HeroPlayer';
 import EnvironmentSelector from '@/components/EnvironmentSelector';
@@ -8,11 +7,7 @@ import { useRadioStore } from '@/stores/useRadioStore';
 import logoRadio from '@/assets/logo-radio-tvg.png';
 
 const AudioTab = () => {
-  const { isLive, loadEnvironments, environmentsLoaded } = useRadioStore();
-
-  useEffect(() => {
-    if (!environmentsLoaded) loadEnvironments();
-  }, [environmentsLoaded, loadEnvironments]);
+  const { isLive } = useRadioStore();
 
   return (
     <motion.div

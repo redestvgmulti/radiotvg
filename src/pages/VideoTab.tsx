@@ -5,6 +5,7 @@ import LiveBadge from '@/components/LiveBadge';
 import VideoPlayer from '@/components/VideoPlayer';
 import logoRadio from '@/assets/logo-radio-tvg.png';
 import { supabase } from '@/integrations/supabase/client';
+import { useRadioStore } from '@/stores/useRadioStore';
 
 import thumbLiveCulto from '@/assets/thumb-live-culto.jpg';
 import thumbManhaSertaneja from '@/assets/thumb-manha-sertaneja.jpg';
@@ -23,6 +24,7 @@ interface Video {
   hlsSrc: string;
 }
 
+// TODO: Replace with DB-driven video library once admin UI is built
 const libraryVideos: Video[] = [
   { id: '2', title: 'Manhã Sertaneja', thumbnail: thumbManhaSertaneja, isLive: false, views: '890', duration: '1:32:00', hlsSrc: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8' },
   { id: '3', title: 'Entrevista Especial', thumbnail: thumbEntrevista, isLive: false, views: '1.1K', duration: '45:20', hlsSrc: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8' },
@@ -36,6 +38,7 @@ const VideoTab = () => {
   const [liveStreamUrl, setLiveStreamUrl] = useState('');
   const [isLive, setIsLive] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { setVideoActive } = useRadioStore();
 
   useEffect(() => {
     const fetchVideoSettings = async () => {
@@ -55,46 +58,40 @@ const VideoTab = () => {
     fetchVideoSettings();
   }, []);
 
+  const openVideo = (video: Video) => {
+    setActiveVideo(video);
+    setVideoActive(true);
+  };
+
+  const closeVideo = () => {
+    setActiveVideo(null);
+    setVideoActive(false);
+  };
+
   const liveVideo: Video | null = isLive && liveStreamUrl ? {
-    id: 'live',
-    title: 'Transmissão ao Vivo',
-    thumbnail: thumbLiveCulto,
-    isLive: true,
-    views: 'AO VIVO',
-    duration: '',
-    hlsSrc: liveStreamUrl,
+    id: 'live', title: 'Transmissão ao Vivo', thumbnail: thumbLiveCulto,
+    isLive: true, views: 'AO VIVO', duration: '', hlsSrc: liveStreamUrl,
   } : null;
 
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4 }}
-        className="min-h-screen pb-24"
-      >
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="min-h-screen pb-24">
         <header className="flex items-center justify-between px-5 pt-5 pb-3">
           <div className="h-10 sm:h-11 md:h-12 overflow-hidden flex items-center">
             <img src={logoRadio} alt="Rádio TVG" className="h-[200%] w-auto object-contain object-center" />
           </div>
         </header>
 
-        {/* Live Hero */}
         {liveVideo && (
-          <motion.div
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setActiveVideo(liveVideo)}
-            className="relative mx-4 mb-5 rounded-3xl overflow-hidden cursor-pointer group shadow-[0_8px_60px_-12px_hsl(var(--live)/0.3)]"
-          >
+          <motion.div whileTap={{ scale: 0.98 }} onClick={() => openVideo(liveVideo)}
+            className="relative mx-4 mb-5 rounded-3xl overflow-hidden cursor-pointer group shadow-[0_8px_60px_-12px_hsl(var(--live)/0.3)]">
             <div className="aspect-video">
-              <img src={liveVideo.thumbnail} alt={liveVideo.title}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              <img src={liveVideo.thumbnail} alt={liveVideo.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
             <div className="absolute top-4 left-4"><LiveBadge /></div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <motion.div whileHover={{ scale: 1.1 }}
-                className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-xl border border-white/20 flex items-center justify-center">
+              <motion.div whileHover={{ scale: 1.1 }} className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-xl border border-white/20 flex items-center justify-center">
                 <Play className="h-7 w-7 text-white ml-0.5" />
               </motion.div>
             </div>
@@ -112,17 +109,13 @@ const VideoTab = () => {
           </div>
         )}
 
-        {/* Library */}
         <div className="px-4">
-          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.15em] mb-3 px-1">
-            Biblioteca
-          </p>
-
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.15em] mb-3 px-1">Biblioteca</p>
           <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-3 mb-4">
             {libraryVideos.slice(0, 3).map((video, i) => (
               <motion.div key={video.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.06 }} whileTap={{ scale: 0.97 }}
-                onClick={() => setActiveVideo(video)}
+                onClick={() => openVideo(video)}
                 className="relative flex-shrink-0 w-[260px] rounded-2xl overflow-hidden cursor-pointer group">
                 <div className="aspect-video">
                   <img src={video.thumbnail} alt={video.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
@@ -146,7 +139,7 @@ const VideoTab = () => {
             {libraryVideos.slice(3).map((video, i) => (
               <motion.div key={video.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 + i * 0.06 }} whileTap={{ scale: 0.98 }}
-                onClick={() => setActiveVideo(video)}
+                onClick={() => openVideo(video)}
                 className="flex gap-3 cursor-pointer group">
                 <div className="relative flex-shrink-0 w-[160px] rounded-xl overflow-hidden">
                   <div className="aspect-video">
@@ -167,13 +160,7 @@ const VideoTab = () => {
 
       <AnimatePresence>
         {activeVideo && (
-          <VideoPlayer
-            src={activeVideo.hlsSrc}
-            title={activeVideo.title}
-            isLive={activeVideo.isLive}
-            poster={activeVideo.thumbnail}
-            onClose={() => setActiveVideo(null)}
-          />
+          <VideoPlayer src={activeVideo.hlsSrc} title={activeVideo.title} isLive={activeVideo.isLive} poster={activeVideo.thumbnail} onClose={closeVideo} />
         )}
       </AnimatePresence>
     </>

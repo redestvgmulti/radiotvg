@@ -60,7 +60,12 @@ const VideoPlayer = ({ src, title, isLive = false, poster, onClose }: VideoPlaye
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setLoading(false);
-        video.play().then(() => setPlaying(true)).catch(() => {});
+        video.play().then(() => setPlaying(true)).catch(() => {
+          // Autoplay blocked — retry muted
+          video.muted = true;
+          setMuted(true);
+          video.play().then(() => setPlaying(true)).catch(() => {});
+        });
       });
       hls.on(Hls.Events.ERROR, (_e, data) => {
         if (data.fatal) {
@@ -72,7 +77,11 @@ const VideoPlayer = ({ src, title, isLive = false, poster, onClose }: VideoPlaye
       video.src = src;
       video.addEventListener('loadedmetadata', () => {
         setLoading(false);
-        video.play().then(() => setPlaying(true)).catch(() => {});
+        video.play().then(() => setPlaying(true)).catch(() => {
+          video.muted = true;
+          setMuted(true);
+          video.play().then(() => setPlaying(true)).catch(() => {});
+        });
       });
     }
 

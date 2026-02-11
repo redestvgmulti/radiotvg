@@ -5,13 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-interface RadioSetting {
-  id: string;
-  key: string;
-  value: string;
-  label: string;
-}
-
 const AdminVideo = () => {
   const [videoUrl, setVideoUrl] = useState('');
   const [isLive, setIsLive] = useState(false);
@@ -30,10 +23,8 @@ const AdminVideo = () => {
         .in('key', ['video_stream_url', 'video_is_live']);
 
       if (data) {
-        const urlSetting = data.find(s => s.key === 'video_stream_url');
-        const liveSetting = data.find(s => s.key === 'video_is_live');
-        const url = urlSetting?.value || '';
-        const live = liveSetting?.value === 'true';
+        const url = data.find(s => s.key === 'video_stream_url')?.value || '';
+        const live = data.find(s => s.key === 'video_is_live')?.value === 'true';
         setVideoUrl(url);
         setIsLive(live);
         setOriginalUrl(url);
@@ -65,8 +56,8 @@ const AdminVideo = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="flex items-center gap-3 px-4 py-3 border-b border-border">
+    <>
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
         <button onClick={() => navigate('/admin')} className="h-7 w-7 rounded-md bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-3.5 w-3.5" />
         </button>
@@ -85,14 +76,13 @@ const AdminVideo = () => {
             Salvar
           </motion.button>
         )}
-      </header>
+      </div>
 
       <div className="max-w-md mx-auto px-4 py-4 space-y-4">
         {loading ? (
           <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : (
           <>
-            {/* LIVE Toggle */}
             <div className="rounded-lg border border-border bg-card p-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -111,7 +101,6 @@ const AdminVideo = () => {
               </div>
             </div>
 
-            {/* Video Stream URL */}
             <div className="rounded-lg border border-border bg-card p-3 space-y-2">
               <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block">URL do Stream de Vídeo (HLS)</label>
               <input
@@ -131,7 +120,7 @@ const AdminVideo = () => {
           </>
         )}
       </div>
-    </div>
+    </>
   );
 };
 
