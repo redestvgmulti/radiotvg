@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Save, Loader2, Video, Circle, Plus, Trash2, GripVertical, Eye, EyeOff, Pencil, X, Film } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Video, Circle, Plus, Trash2, GripVertical, Eye, EyeOff, Pencil, X, Film, Upload, ImageIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -36,6 +36,7 @@ const AdminVideo = () => {
   const [editing, setEditing] = useState<EditingVideo | null>(null);
   const [originalUrl, setOriginalUrl] = useState('');
   const [originalLive, setOriginalLive] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -230,13 +231,64 @@ const AdminVideo = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block">URL da Thumbnail</label>
-                <input type="url" value={editing.thumbnail_url} onChange={e => setEditing({ ...editing, thumbnail_url: e.target.value })}
-                  placeholder="https://..." className="w-full h-8 px-2.5 rounded-lg bg-background border border-border text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/50" />
-                {editing.thumbnail_url && (
-                  <div className="w-full h-24 rounded-lg overflow-hidden bg-muted/30">
+                <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block">Thumbnail</label>
+                {editing.thumbnail_url ? (
+                  <div className="relative w-full h-28 rounded-lg overflow-hidden bg-muted/30 group">
                     <img src={editing.thumbnail_url} alt="Preview" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <label className="h-8 px-3 rounded-md bg-white/20 backdrop-blur-sm text-white text-[10px] font-semibold flex items-center gap-1.5 cursor-pointer hover:bg-white/30 transition-colors">
+                        <Upload className="h-3 w-3" /> Trocar
+                        <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setUploading(true);
+                          const ext = file.name.split('.').pop();
+                          const path = `thumbnails/${Date.now()}.${ext}`;
+                          const { error } = await supabase.storage.from('radio-assets').upload(path, file, { upsert: true });
+                          if (error) { toast({ title: 'Erro no upload', description: error.message, variant: 'destructive' }); }
+                          else {
+                            const { data: urlData } = supabase.storage.from('radio-assets').getPublicUrl(path);
+                            setEditing({ ...editing, thumbnail_url: urlData.publicUrl });
+                          }
+                          setUploading(false);
+                        }} />
+                      </label>
+                      <button onClick={() => setEditing({ ...editing, thumbnail_url: '' })}
+                        className="h-8 px-3 rounded-md bg-white/20 backdrop-blur-sm text-white text-[10px] font-semibold flex items-center gap-1.5 hover:bg-red-500/60 transition-colors">
+                        <Trash2 className="h-3 w-3" /> Remover
+                      </button>
+                    </div>
+                    {uploading && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                        <Loader2 className="h-5 w-5 animate-spin text-white" />
+                      </div>
+                    )}
                   </div>
+                ) : (
+                  <label className={`w-full h-28 rounded-lg border-2 border-dashed border-border hover:border-primary/40 transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer ${uploading ? 'pointer-events-none' : ''}`}>
+                    {uploading ? (
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    ) : (
+                      <>
+                        <ImageIcon className="h-6 w-6 text-muted-foreground/40" />
+                        <span className="text-[10px] text-muted-foreground">Clique para enviar imagem</span>
+                      </>
+                    )}
+                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setUploading(true);
+                      const ext = file.name.split('.').pop();
+                      const path = `thumbnails/${Date.now()}.${ext}`;
+                      const { error } = await supabase.storage.from('radio-assets').upload(path, file, { upsert: true });
+                      if (error) { toast({ title: 'Erro no upload', description: error.message, variant: 'destructive' }); }
+                      else {
+                        const { data: urlData } = supabase.storage.from('radio-assets').getPublicUrl(path);
+                        setEditing({ ...editing, thumbnail_url: urlData.publicUrl });
+                      }
+                      setUploading(false);
+                    }} />
+                  </label>
                 )}
               </div>
 
