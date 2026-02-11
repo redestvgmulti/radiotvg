@@ -14,6 +14,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminStreaming from "./pages/AdminStreaming";
 import AdminUsers from "./pages/AdminUsers";
 import AdminStats from "./pages/AdminStats";
+import AdminConfig from "./pages/AdminConfig";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const AppLayout = () => {
         <Route path="/admin/streaming" element={<AdminStreaming />} />
         <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="/admin/stats" element={<AdminStats />} />
+        <Route path="/admin/config" element={<AdminConfig />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {!isAdmin && <BottomNav />}

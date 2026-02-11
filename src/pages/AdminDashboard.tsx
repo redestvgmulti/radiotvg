@@ -45,7 +45,7 @@ const AdminDashboard = () => {
     { icon: Radio, label: 'Streaming', description: 'Gerenciar streams e ambientes', color: 'text-blue-500', path: '/admin/streaming' },
     { icon: Users, label: 'Usuários', description: 'Gerenciar usuários e permissões', color: 'text-green-500', path: '/admin/users' },
     { icon: BarChart3, label: 'Estatísticas', description: 'Visualizar métricas e analytics', color: 'text-purple-500', path: '/admin/stats' },
-    { icon: Settings, label: 'Configurações', description: 'Configurações do sistema', color: 'text-orange-500', path: '' },
+    { icon: Settings, label: 'Configurações', description: 'Configurações do sistema', color: 'text-orange-500', path: '/admin/config' },
   ];
 
   return (

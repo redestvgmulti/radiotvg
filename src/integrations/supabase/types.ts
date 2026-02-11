@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      radio_settings: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          key: string
+          label: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          key: string
+          label?: string
+          updated_at?: string
+          value?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          key?: string
+          label?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       stream_environments: {
         Row: {
           created_at: string
