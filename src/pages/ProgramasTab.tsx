@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Headphones, ChevronRight, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import logoRadio from '@/assets/logo-radio-tvg.png';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,6 +21,7 @@ interface Program {
 const ProgramasTab = () => {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPrograms = async () => {
@@ -86,6 +88,7 @@ const ProgramasTab = () => {
 
       {nowPlaying && (
         <motion.div whileTap={{ scale: 0.98 }}
+          onClick={() => navigate(`/programas/${nowPlaying.id}`)}
           className="relative mx-4 mb-5 rounded-3xl overflow-hidden cursor-pointer group bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20"
           style={{ minHeight: 160 }}>
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
@@ -118,6 +121,7 @@ const ProgramasTab = () => {
             {otherPrograms.map((program, i) => (
               <motion.div key={program.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.06 }} whileTap={{ scale: 0.98 }}
+                onClick={() => navigate(`/programas/${program.id}`)}
                 className="flex gap-3 cursor-pointer group">
                 <div className="relative flex-shrink-0 w-[100px] h-[100px] rounded-2xl overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5 border border-border flex items-center justify-center">
                   <Headphones className="h-6 w-6 text-primary/40" />
