@@ -1,27 +1,32 @@
 import { useRadioStore, environmentMeta, type Environment } from '@/stores/useRadioStore';
 import { motion } from 'framer-motion';
 
+import envSertanejo from '@/assets/env-sertanejo.jpg';
+import envPoprock from '@/assets/env-poprock.jpg';
+import envRaiz from '@/assets/env-raiz.jpg';
+import envGospel from '@/assets/env-gospel.jpg';
+
 const environments: Environment[] = ['sertanejo', 'poprock', 'raiz', 'gospel'];
 
-const colorMap: Record<Environment, string> = {
-  sertanejo: 'bg-env-sertanejo/20 border-env-sertanejo/30 text-env-sertanejo',
-  poprock: 'bg-env-poprock/20 border-env-poprock/30 text-env-poprock',
-  raiz: 'bg-env-raiz/20 border-env-raiz/30 text-env-raiz',
-  gospel: 'bg-env-gospel/20 border-env-gospel/30 text-env-gospel',
+const imageMap: Record<Environment, string> = {
+  sertanejo: envSertanejo,
+  poprock: envPoprock,
+  raiz: envRaiz,
+  gospel: envGospel,
 };
 
-const activeColorMap: Record<Environment, string> = {
-  sertanejo: 'bg-env-sertanejo text-background border-env-sertanejo',
-  poprock: 'bg-env-poprock text-background border-env-poprock',
-  raiz: 'bg-env-raiz text-background border-env-raiz',
-  gospel: 'bg-env-gospel text-background border-env-gospel',
+const glowActiveMap: Record<Environment, string> = {
+  sertanejo: 'ring-2 ring-env-sertanejo/60 shadow-[0_0_20px_-4px_hsl(var(--env-sertanejo)/0.4)]',
+  poprock: 'ring-2 ring-env-poprock/60 shadow-[0_0_20px_-4px_hsl(var(--env-poprock)/0.4)]',
+  raiz: 'ring-2 ring-env-raiz/60 shadow-[0_0_20px_-4px_hsl(var(--env-raiz)/0.4)]',
+  gospel: 'ring-2 ring-env-gospel/60 shadow-[0_0_20px_-4px_hsl(var(--env-gospel)/0.4)]',
 };
 
 const EnvironmentSelector = () => {
   const { currentEnvironment, setEnvironment } = useRadioStore();
 
   return (
-    <div className="flex gap-2 overflow-x-auto scrollbar-hide px-1 py-2">
+    <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
       {environments.map((env) => {
         const meta = environmentMeta[env];
         const isActive = currentEnvironment === env;
@@ -31,18 +36,24 @@ const EnvironmentSelector = () => {
             key={env}
             onClick={() => setEnvironment(env)}
             whileTap={{ scale: 0.95 }}
-            className={`relative flex-shrink-0 px-5 py-2.5 rounded-full border text-sm font-semibold transition-all duration-250 ${
-              isActive ? activeColorMap[env] : colorMap[env]
+            className={`relative flex-shrink-0 w-[130px] h-[80px] rounded-2xl overflow-hidden transition-all duration-250 ${
+              isActive ? glowActiveMap[env] : 'ring-1 ring-border/30 opacity-70'
             }`}
           >
-            {isActive && (
-              <motion.div
-                layoutId="env-bg"
-                className="absolute inset-0 rounded-full"
-                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              />
-            )}
-            <span className="relative z-10">{meta.label}</span>
+            {/* Background image */}
+            <img
+              src={imageMap[env]}
+              alt={meta.label}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            {/* Dark overlay */}
+            <div className="absolute inset-0 bg-black/40" />
+            {/* Label */}
+            <div className="relative z-10 flex items-end h-full p-3">
+              <span className="text-white text-xs font-semibold drop-shadow-md">
+                {meta.label}
+              </span>
+            </div>
           </motion.button>
         );
       })}
