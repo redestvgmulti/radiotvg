@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Clock, Headphones, ChevronRight } from 'lucide-react';
 import heroProgramas from '@/assets/hero-programas.jpg';
+import logoRadio from '@/assets/logo-radio-tvg.png';
 
 import thumbManhaSertaneja from '@/assets/thumb-manha-sertaneja.jpg';
 import thumbTopHits from '@/assets/thumb-top-hits.jpg';
@@ -29,7 +30,7 @@ const ProgramasTab = () => {
     >
       {/* Minimal Header */}
       <header className="px-5 pt-4 pb-2">
-        <h1 className="text-lg font-display font-bold text-foreground tracking-tight">Programas</h1>
+        <img src={logoRadio} alt="Rádio TVG" className="h-8 sm:h-9 md:h-10 w-auto object-contain" />
       </header>
 
       {/* Hero — Now Playing Program */}
