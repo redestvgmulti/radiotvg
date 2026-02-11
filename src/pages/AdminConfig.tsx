@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Save, Loader2, Settings, Globe, Share2, Wrench } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Settings, Globe, Share2, Wrench, ImageIcon, Upload, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -13,8 +13,11 @@ interface RadioSetting {
   category: string;
 }
 
+const IMAGE_KEYS = ['logo_url', 'hero_image_url', 'favicon_url'];
+
 const categoryMeta: Record<string, { label: string; icon: typeof Settings }> = {
   geral: { label: 'Geral', icon: Settings },
+  imagens: { label: 'Imagens', icon: ImageIcon },
   contato: { label: 'Contato', icon: Globe },
   redes_sociais: { label: 'Redes Sociais', icon: Share2 },
   sistema: { label: 'Sistema', icon: Wrench },
@@ -25,6 +28,8 @@ const AdminConfig = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editedValues, setEditedValues] = useState<Record<string, string>>({});
+  const [uploading, setUploading] = useState<string | null>(null);
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -56,6 +61,69 @@ const AdminConfig = () => {
 
   const hasChanges = Object.keys(editedValues).length > 0;
 
+  const handleImageUpload = async (settingKey: string, file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Erro', description: 'Selecione um arquivo de imagem.', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: 'Erro', description: 'Imagem deve ter no máximo 5MB.', variant: 'destructive' });
+      return;
+    }
+
+    setUploading(settingKey);
+    const ext = file.name.split('.').pop() || 'png';
+    const filePath = `${settingKey}-${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('radio-assets')
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) {
+      toast({ title: 'Erro no upload', description: uploadError.message, variant: 'destructive' });
+      setUploading(null);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('radio-assets')
+      .getPublicUrl(filePath);
+
+    const publicUrl = urlData.publicUrl;
+
+    // Save directly to DB
+    const { error: updateError } = await supabase
+      .from('radio_settings')
+      .update({ value: publicUrl })
+      .eq('key', settingKey);
+
+    if (updateError) {
+      toast({ title: 'Erro ao salvar', description: updateError.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Upload concluído!', description: 'Imagem atualizada.' });
+      // Remove from edited if present
+      setEditedValues((prev) => {
+        const next = { ...prev };
+        delete next[settingKey];
+        return next;
+      });
+      fetchSettings();
+    }
+    setUploading(null);
+  };
+
+  const removeImage = async (settingKey: string) => {
+    const { error } = await supabase
+      .from('radio_settings')
+      .update({ value: '' })
+      .eq('key', settingKey);
+
+    if (!error) {
+      toast({ title: 'Imagem removida' });
+      fetchSettings();
+    }
+  };
+
   const saveAll = async () => {
     setSaving(true);
     const updates = Object.entries(editedValues).map(([key, value]) =>
@@ -82,7 +150,59 @@ const AdminConfig = () => {
     return acc;
   }, {});
 
-  const categoryOrder = ['geral', 'contato', 'redes_sociais', 'sistema'];
+  const categoryOrder = ['geral', 'imagens', 'contato', 'redes_sociais', 'sistema'];
+
+  const renderImageField = (s: RadioSetting) => {
+    const currentUrl = getValue(s);
+    const isUploading = uploading === s.key;
+
+    return (
+      <div className="space-y-2">
+        {currentUrl ? (
+          <div className="relative inline-block">
+            <img
+              src={currentUrl}
+              alt={s.label}
+              className="h-20 w-auto rounded-xl border border-border object-contain bg-muted/30"
+            />
+            <button
+              onClick={() => removeImage(s.key)}
+              className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        ) : (
+          <div className="h-20 w-32 rounded-xl border-2 border-dashed border-border flex items-center justify-center bg-muted/10">
+            <ImageIcon className="h-6 w-6 text-muted-foreground/40" />
+          </div>
+        )}
+        <input
+          type="file"
+          accept="image/*"
+          ref={(el) => { fileInputRefs.current[s.key] = el; }}
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleImageUpload(s.key, file);
+          }}
+        />
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={() => fileInputRefs.current[s.key]?.click()}
+          disabled={isUploading}
+          className="h-9 px-4 rounded-xl bg-muted text-foreground text-xs font-semibold flex items-center gap-1.5 disabled:opacity-60 transition-colors hover:bg-muted/80"
+        >
+          {isUploading ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Upload className="h-3.5 w-3.5" />
+          )}
+          {isUploading ? 'Enviando...' : currentUrl ? 'Trocar imagem' : 'Fazer upload'}
+        </motion.button>
+      </div>
+    );
+  };
 
   return (
     <motion.div
@@ -149,7 +269,9 @@ const AdminConfig = () => {
                         <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">
                           {s.label}
                         </label>
-                        {s.key === 'maintenance_mode' ? (
+                        {IMAGE_KEYS.includes(s.key) ? (
+                          renderImageField(s)
+                        ) : s.key === 'maintenance_mode' ? (
                           <button
                             onClick={() =>
                               handleChange(s.key, getValue(s) === 'true' ? 'false' : 'true')
