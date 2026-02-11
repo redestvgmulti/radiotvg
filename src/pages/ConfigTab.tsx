@@ -1,41 +1,70 @@
 import { motion } from 'framer-motion';
-import { Settings, Volume2, Palette, Shield, Info } from 'lucide-react';
+import { Volume2, Palette, Shield, Info, ChevronRight, Moon, Sun } from 'lucide-react';
+
+const sections = [
+  {
+    title: 'Reprodução',
+    items: [
+      { icon: Volume2, label: 'Qualidade de áudio', value: 'Alta', chevron: true },
+    ],
+  },
+  {
+    title: 'Aparência',
+    items: [
+      { icon: Palette, label: 'Tema', value: 'Claro', chevron: true },
+    ],
+  },
+  {
+    title: 'Geral',
+    items: [
+      { icon: Shield, label: 'Privacidade', value: '', chevron: true },
+      { icon: Info, label: 'Sobre', value: 'v1.0.0', chevron: true },
+    ],
+  },
+];
 
 const ConfigTab = () => {
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className="min-h-screen pb-24 px-4 pt-6"
+      transition={{ duration: 0.4 }}
+      className="min-h-screen pb-24"
     >
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-          <Settings className="h-5 w-5 text-primary" />
-        </div>
-        <h1 className="text-2xl font-display font-bold text-foreground">Configurações</h1>
-      </div>
+      {/* Minimal Header */}
+      <header className="px-5 pt-4 pb-4">
+        <h1 className="text-lg font-display font-bold text-foreground tracking-tight">Configurações</h1>
+      </header>
 
-      <div className="space-y-2">
-        {[
-          { icon: Volume2, label: 'Qualidade de áudio', value: 'Alta' },
-          { icon: Palette, label: 'Aparência', value: 'Escuro' },
-          { icon: Shield, label: 'Privacidade', value: '' },
-          { icon: Info, label: 'Sobre', value: 'v1.0.0' },
-        ].map((item, i) => (
-          <motion.button
-            key={item.label}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-            className="w-full glass-subtle rounded-xl p-4 flex items-center gap-4 hover:bg-card/60 transition-colors"
-          >
-            <item.icon className="h-5 w-5 text-muted-foreground" />
-            <span className="flex-1 text-left text-sm font-medium text-foreground">{item.label}</span>
-            {item.value && (
-              <span className="text-xs text-muted-foreground">{item.value}</span>
-            )}
-          </motion.button>
+      {/* Sections */}
+      <div className="px-4 space-y-6">
+        {sections.map((section, si) => (
+          <div key={section.title}>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.15em] mb-3 px-1">
+              {section.title}
+            </p>
+            <div className="flex flex-col gap-1.5">
+              {section.items.map((item, i) => (
+                <motion.button
+                  key={item.label}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: si * 0.08 + i * 0.05 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full flex items-center gap-4 p-4 rounded-2xl bg-card/40 backdrop-blur-sm border border-border/20 transition-colors duration-200 hover:bg-card/60"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-muted/20 flex items-center justify-center flex-shrink-0">
+                    <item.icon className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <span className="flex-1 text-left text-sm font-medium text-foreground">{item.label}</span>
+                  {item.value && (
+                    <span className="text-xs text-muted-foreground">{item.value}</span>
+                  )}
+                  {item.chevron && <ChevronRight className="h-4 w-4 text-muted-foreground/40" />}
+                </motion.button>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
     </motion.div>
