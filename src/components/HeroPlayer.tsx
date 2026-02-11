@@ -1,8 +1,6 @@
-import { useEffect, useRef } from 'react';
-import { useRadioStore, getEnvColorVar } from '@/stores/useRadioStore';
+import { useRadioStore } from '@/stores/useRadioStore';
 import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Hls from 'hls.js';
 
 import envSertanejo from '@/assets/env-sertanejo.jpg';
 import envPoprock from '@/assets/env-poprock.jpg';
@@ -23,71 +21,21 @@ const glowMap: Record<string, string> = {
   gospel: 'shadow-[0_8px_80px_-12px_hsl(var(--env-gospel)/0.35)]',
 };
 
+/**
+ * HeroPlayer — UI-only component.
+ * All audio logic lives in AudioEngine.
+ */
 const HeroPlayer = () => {
   const {
-    isPlaying, togglePlay, setPlaying, volume, setVolume,
+    isPlaying, togglePlay, volume, setVolume,
     currentEnvironmentSlug, currentTrack,
     getCurrentEnvironment, getCurrentStreamUrl,
-    loadEnvironments, environmentsLoaded,
   } = useRadioStore();
-
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const hlsRef = useRef<Hls | null>(null);
-
-  useEffect(() => {
-    if (!environmentsLoaded) loadEnvironments();
-  }, [environmentsLoaded, loadEnvironments]);
 
   const env = getCurrentEnvironment();
   const streamUrl = getCurrentStreamUrl();
   const imgSrc = env?.image_url || localImageMap[env?.slug || 'sertanejo'] || localImageMap.sertanejo;
   const glow = glowMap[env?.slug || 'sertanejo'] || '';
-
-  // Setup HLS audio
-  useEffect(() => {
-    if (!streamUrl) return;
-
-    // Create audio element if needed
-    if (!audioRef.current) {
-      audioRef.current = new Audio();
-    }
-    const audio = audioRef.current;
-
-    // Cleanup previous HLS
-    hlsRef.current?.destroy();
-    hlsRef.current = null;
-
-    if (Hls.isSupported()) {
-      const hls = new Hls({ enableWorker: true });
-      hlsRef.current = hls;
-      hls.loadSource(streamUrl);
-      hls.attachMedia(audio);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        if (isPlaying) audio.play().catch(() => {});
-      });
-    } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
-      audio.src = streamUrl;
-      if (isPlaying) audio.play().catch(() => {});
-    }
-
-    return () => {
-      hlsRef.current?.destroy();
-      hlsRef.current = null;
-    };
-  }, [streamUrl]);
-
-  // Play/pause sync
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio || !streamUrl) return;
-    if (isPlaying) audio.play().catch(() => {});
-    else audio.pause();
-  }, [isPlaying, streamUrl]);
-
-  // Volume sync
-  useEffect(() => {
-    if (audioRef.current) audioRef.current.volume = volume;
-  }, [volume]);
 
   return (
     <motion.div

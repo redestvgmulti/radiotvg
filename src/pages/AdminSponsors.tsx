@@ -28,7 +28,6 @@ const AdminSponsors = () => {
   const [creating, setCreating] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
-  const createFileRef = useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -58,11 +57,8 @@ const AdminSponsors = () => {
     if (!createForm.name) return;
     setCreating(true);
     const { error } = await supabase.from('sponsors').insert({
-      name: createForm.name,
-      image_url: createForm.image_url,
-      link_url: createForm.link_url,
-      display_time: createForm.display_time,
-      sort_order: sponsors.length,
+      name: createForm.name, image_url: createForm.image_url, link_url: createForm.link_url,
+      display_time: createForm.display_time, sort_order: sponsors.length,
     });
     if (error) { toast({ title: 'Erro', description: error.message, variant: 'destructive' }); }
     else { toast({ title: 'Patrocinador criado!' }); setCreateForm({ name: '', image_url: '', link_url: '', display_time: 15 }); setShowCreate(false); fetchSponsors(); }
@@ -139,8 +135,8 @@ const AdminSponsors = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="flex items-center gap-3 px-4 py-3 border-b border-border">
+    <>
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
         <button onClick={() => navigate('/admin')} className="h-7 w-7 rounded-md bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-3.5 w-3.5" />
         </button>
@@ -152,10 +148,9 @@ const AdminSponsors = () => {
           className="h-7 w-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center">
           {showCreate ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
         </button>
-      </header>
+      </div>
 
       <div className="max-w-md mx-auto px-4 py-4 space-y-3">
-        {/* Create Form */}
         <AnimatePresence>
           {showCreate && (
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
@@ -187,7 +182,6 @@ const AdminSponsors = () => {
           )}
         </AnimatePresence>
 
-        {/* List */}
         {loading ? (
           <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : sponsors.length === 0 ? (
@@ -198,7 +192,6 @@ const AdminSponsors = () => {
           sponsors.map((s) => (
             <div key={s.id} className="rounded-lg border border-border bg-card overflow-hidden">
               <div className="flex items-center gap-2.5 px-3 py-2.5">
-                {/* Thumbnail */}
                 {s.image_url ? (
                   <img src={s.image_url} alt={s.name} className="h-9 w-9 rounded-md object-cover border border-border flex-shrink-0" />
                 ) : (
@@ -235,7 +228,6 @@ const AdminSponsors = () => {
                 </div>
               </div>
 
-              {/* Edit */}
               <AnimatePresence>
                 {editingId === s.id && (
                   <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
@@ -268,7 +260,7 @@ const AdminSponsors = () => {
           ))
         )}
       </div>
-    </div>
+    </>
   );
 };
 
