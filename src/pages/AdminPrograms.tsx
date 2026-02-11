@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Calendar, Plus, Pencil, Trash2, Clock } from 'lucide-react';
+import { ArrowLeft, Calendar, Plus, Pencil, Trash2, Clock, Image } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -145,6 +145,9 @@ const AdminPrograms = () => {
                 <p className="text-[9px] text-muted-foreground/60">{DAYS[p.day_of_week]}</p>
               </div>
               <Switch checked={p.is_active} onCheckedChange={v => handleToggle(p.id, v)} className="scale-75" />
+              <button onClick={() => navigate(`/admin/programs/${p.id}/gallery`)} className="h-6 w-6 rounded bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground" title="Galeria">
+                <Image className="h-3 w-3" />
+              </button>
               <button onClick={() => handleEdit(p)} className="h-6 w-6 rounded bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground">
                 <Pencil className="h-3 w-3" />
               </button>
