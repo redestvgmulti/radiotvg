@@ -46,7 +46,7 @@ const VideoTab = () => {
       >
         {/* Minimal Header */}
         <header className="flex items-center justify-between px-5 pt-4 pb-2">
-          <img src={logoRadio} alt="Rádio TVG" className="h-8 sm:h-9 md:h-10 w-auto object-contain" />
+          <img src={logoRadio} alt="Rádio TVG" className="h-10 sm:h-11 md:h-12 w-auto object-contain" />
         </header>
 
         {/* Live Hero */}
