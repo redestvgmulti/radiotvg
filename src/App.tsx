@@ -12,6 +12,9 @@ import ConfigTab from "./pages/ConfigTab";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminStreaming from "./pages/AdminStreaming";
+import AdminVideo from "./pages/AdminVideo";
+import AdminSponsors from "./pages/AdminSponsors";
+import AdminPrograms from "./pages/AdminPrograms";
 import AdminUsers from "./pages/AdminUsers";
 import AdminStats from "./pages/AdminStats";
 import AdminConfig from "./pages/AdminConfig";
@@ -34,6 +37,9 @@ const AppLayout = () => {
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/streaming" element={<AdminStreaming />} />
+        <Route path="/admin/video" element={<AdminVideo />} />
+        <Route path="/admin/sponsors" element={<AdminSponsors />} />
+        <Route path="/admin/programs" element={<AdminPrograms />} />
         <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="/admin/stats" element={<AdminStats />} />
         <Route path="/admin/config" element={<AdminConfig />} />
