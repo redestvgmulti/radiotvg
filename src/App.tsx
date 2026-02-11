@@ -3,7 +3,12 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import BottomNav from "./components/BottomNav";
+import AudioTab from "./pages/AudioTab";
+import VideoTab from "./pages/VideoTab";
+import ProgramasTab from "./pages/ProgramasTab";
+import PerfilTab from "./pages/PerfilTab";
+import ConfigTab from "./pages/ConfigTab";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -14,11 +19,17 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <div className="min-h-screen bg-background max-w-lg mx-auto relative">
+          <Routes>
+            <Route path="/" element={<AudioTab />} />
+            <Route path="/video" element={<VideoTab />} />
+            <Route path="/programas" element={<ProgramasTab />} />
+            <Route path="/perfil" element={<PerfilTab />} />
+            <Route path="/config" element={<ConfigTab />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <BottomNav />
+        </div>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
