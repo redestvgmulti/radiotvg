@@ -177,6 +177,16 @@ const AudioEngine = () => {
         ytContainerRef.current.innerHTML = '';
         ytContainerRef.current.appendChild(div);
 
+        let ready = false;
+        const initTimeout = setTimeout(() => {
+          if (!ready) {
+            console.warn('[AudioEngine] YouTube player init timeout');
+            setStreamError('YouTube demorou para responder. Tente novamente.');
+            setBuffering(false);
+            setTimeout(() => setStreamError(null), 5000);
+          }
+        }, 15000);
+
         const player = new window.YT.Player('yt-audio-player', {
           videoId,
           height: '1',
@@ -186,9 +196,12 @@ const AudioEngine = () => {
             controls: 0,
             modestbranding: 1,
             playsinline: 1,
+            origin: window.location.origin,
           },
           events: {
             onReady: () => {
+              ready = true;
+              clearTimeout(initTimeout);
               setBuffering(false);
               player.setVolume(useRadioStore.getState().volume * 100);
               if (isPlayingRef.current) player.playVideo();
@@ -198,10 +211,21 @@ const AudioEngine = () => {
               if (event.data === 1) { setBuffering(false); setStreamError(null); }
               if (event.data === -1 || event.data === 5) setBuffering(false);
             },
-            onError: () => {
-              setStreamError('Erro ao reproduzir YouTube');
+            onError: (event: { data: number }) => {
+              ready = true;
+              clearTimeout(initTimeout);
+              const errorMap: Record<number, string> = {
+                2: 'Parâmetro inválido no vídeo',
+                5: 'Erro no player HTML5',
+                100: 'Vídeo não encontrado ou removido',
+                101: 'Vídeo não permite reprodução incorporada',
+                150: 'Vídeo não permite reprodução incorporada',
+              };
+              const msg = errorMap[event.data] || `Erro YouTube (código ${event.data})`;
+              console.error('[AudioEngine] YouTube error:', event.data, msg);
+              setStreamError(msg);
               setBuffering(false);
-              setTimeout(() => setStreamError(null), 4000);
+              setTimeout(() => setStreamError(null), 6000);
             },
           },
         } as Record<string, unknown>);
