@@ -45,7 +45,7 @@ const AppLayout = () => {
   const isAdmin = location.pathname.startsWith('/admin');
 
   return (
-    <div className={`min-h-screen bg-background ${isAdmin ? '' : 'max-w-lg mx-auto'} relative`}>
+    <div className={`min-h-screen bg-background ${isAdmin ? '' : 'max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-4xl mx-auto'} relative`}>
       <Routes>
         {/* Public routes */}
         <Route path="/" element={<AudioTab />} />

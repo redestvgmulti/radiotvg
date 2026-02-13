@@ -41,8 +41,8 @@ const HeroPlayer = () => {
   return (
     <motion.div
       layout
-      className={`relative overflow-hidden rounded-3xl ${glow} transition-shadow duration-500`}
-      style={{ height: '65vh', minHeight: 360, maxHeight: 600 }}
+      className={`relative overflow-hidden rounded-3xl ${glow} transition-shadow duration-500 h-[55vh] sm:h-[50vh] md:h-[45vh] lg:h-[40vh]`}
+      style={{ minHeight: 300, maxHeight: 600 }}
     >
       <AnimatePresence mode="wait">
         <motion.img

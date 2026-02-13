@@ -27,7 +27,7 @@ const EnvironmentSelector = () => {
   if (environments.length === 0) return null;
 
   return (
-    <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+    <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 md:grid md:grid-cols-4 md:overflow-x-visible">
       {environments.map((env) => {
         const isActive = currentEnvironmentSlug === env.slug;
         const imgSrc = env.image_url || localImageMap[env.slug] || localImageMap.sertanejo;
@@ -38,7 +38,7 @@ const EnvironmentSelector = () => {
             key={env.id}
             onClick={() => setEnvironment(env.slug)}
             whileTap={{ scale: 0.95 }}
-            className={`relative flex-shrink-0 w-[130px] h-[80px] rounded-2xl overflow-hidden transition-all duration-250 ${
+            className={`relative flex-shrink-0 w-[130px] h-[80px] md:w-full md:h-[90px] rounded-2xl overflow-hidden transition-all duration-250 ${
               isActive ? glow : 'ring-1 ring-border/30 opacity-70'
             }`}
           >

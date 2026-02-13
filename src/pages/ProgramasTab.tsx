@@ -117,7 +117,7 @@ const ProgramasTab = () => {
             <p className="text-xs text-muted-foreground">Nenhum programa cadastrado.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 md:grid md:grid-cols-2 lg:grid-cols-3">
             {otherPrograms.map((program, i) => (
               <motion.div key={program.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.06 }} whileTap={{ scale: 0.98 }}
