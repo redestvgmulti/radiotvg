@@ -58,6 +58,7 @@ function loadYouTubeApi(): Promise<void> {
 /**
  * AudioEngine — persistent component mounted at App root.
  * Supports HLS streams (.m3u8) and YouTube URLs.
+ * Audio element is rendered in the DOM for background playback support.
  */
 const AudioEngine = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -66,6 +67,7 @@ const AudioEngine = () => {
   const ytContainerRef = useRef<HTMLDivElement | null>(null);
   const isPlayingRef = useRef(false);
   const activeSourceType = useRef<'hls' | 'youtube' | null>(null);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
   const {
     isPlaying, volume, getCurrentStreamUrl, getCurrentEnvironment,
@@ -79,22 +81,53 @@ const AudioEngine = () => {
     isPlayingRef.current = isPlaying;
   }, [isPlaying]);
 
+  // Wake Lock — prevents screen/device sleep while playing
+  useEffect(() => {
+    const requestWakeLock = async () => {
+      if (!('wakeLock' in navigator)) return;
+      try {
+        if (isPlaying && !wakeLockRef.current) {
+          wakeLockRef.current = await navigator.wakeLock.request('screen');
+          wakeLockRef.current.addEventListener('release', () => {
+            wakeLockRef.current = null;
+          });
+        } else if (!isPlaying && wakeLockRef.current) {
+          await wakeLockRef.current.release();
+          wakeLockRef.current = null;
+        }
+      } catch {
+        // Wake Lock can fail silently
+      }
+    };
+    requestWakeLock();
+
+    // Re-acquire wake lock when page becomes visible again
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isPlayingRef.current) {
+        requestWakeLock();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [isPlaying]);
+
   // Load environments + live status on mount
   useEffect(() => {
     if (!environmentsLoaded) loadEnvironments();
     loadLiveStatus();
   }, []);
 
-  // Create audio element once
+  // Cleanup on unmount
   useEffect(() => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio();
-    }
     return () => {
       hlsRef.current?.destroy();
       ytPlayerRef.current?.destroy();
-      audioRef.current?.pause();
-      audioRef.current = null;
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      wakeLockRef.current?.release();
     };
   }, []);
 
@@ -137,10 +170,8 @@ const AudioEngine = () => {
 
       loadYouTubeApi().then(() => {
         if (!window.YT) return;
-        // Ensure container exists
         if (!ytContainerRef.current) return;
 
-        // Clear previous content
         const div = document.createElement('div');
         div.id = 'yt-audio-player';
         ytContainerRef.current.innerHTML = '';
@@ -163,7 +194,6 @@ const AudioEngine = () => {
               if (isPlayingRef.current) player.playVideo();
             },
             onStateChange: (event: { data: number }) => {
-              // 3 = buffering, 1 = playing, 2 = paused
               if (event.data === 3) setBuffering(true);
               if (event.data === 1) { setBuffering(false); setStreamError(null); }
               if (event.data === -1 || event.data === 5) setBuffering(false);
@@ -190,7 +220,11 @@ const AudioEngine = () => {
     if (!audio) return;
 
     if (Hls.isSupported()) {
-      const hls = new Hls({ enableWorker: true });
+      const hls = new Hls({
+        enableWorker: true,
+        // Keep loading in background to prevent stalls
+        backBufferLength: 90,
+      });
       hlsRef.current = hls;
       hls.loadSource(streamUrl);
       hls.attachMedia(audio);
@@ -213,6 +247,7 @@ const AudioEngine = () => {
         }
       });
     } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
+      // Safari native HLS
       audio.src = streamUrl;
       setBuffering(false);
       if (isPlayingRef.current) audio.play().catch(() => {});
@@ -249,6 +284,24 @@ const AudioEngine = () => {
     if (ytPlayerRef.current) ytPlayerRef.current.setVolume(volume * 100);
   }, [volume]);
 
+  // Re-resume playback when page becomes visible (handles mobile browser throttling)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isPlayingRef.current) {
+        if (activeSourceType.current === 'hls' && audioRef.current) {
+          // Check if audio was paused by the browser
+          if (audioRef.current.paused) {
+            audioRef.current.play().catch(() => {});
+          }
+        } else if (activeSourceType.current === 'youtube' && ytPlayerRef.current) {
+          ytPlayerRef.current.playVideo();
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
   // Media Session API
   const env = getCurrentEnvironment();
   useEffect(() => {
@@ -283,12 +336,21 @@ const AudioEngine = () => {
     });
   }, [currentTrack, env, currentEnvironmentSlug, setPlaying]);
 
-  // Hidden container for YouTube iframe (1x1 pixel, offscreen)
   return (
-    <div
-      ref={ytContainerRef}
-      style={{ position: 'fixed', top: -9999, left: -9999, width: 1, height: 1, overflow: 'hidden' }}
-    />
+    <>
+      {/* Audio element IN the DOM for proper background playback on mobile */}
+      <audio
+        ref={audioRef}
+        playsInline
+        preload="none"
+        style={{ position: 'fixed', top: -9999, left: -9999, width: 0, height: 0 }}
+      />
+      {/* Hidden container for YouTube iframe */}
+      <div
+        ref={ytContainerRef}
+        style={{ position: 'fixed', top: -9999, left: -9999, width: 1, height: 1, overflow: 'hidden' }}
+      />
+    </>
   );
 };
 
