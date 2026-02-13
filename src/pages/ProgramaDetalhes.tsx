@@ -106,7 +106,7 @@ const ProgramaDetalhes = () => {
               <p className="text-xs text-muted-foreground">Nenhum conteúdo na galeria deste programa.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {gallery.map((item, i) => (
                 <motion.div
                   key={item.id}

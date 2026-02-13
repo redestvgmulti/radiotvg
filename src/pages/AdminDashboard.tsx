@@ -55,7 +55,7 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <div className="max-w-md mx-auto px-4 py-4 space-y-4">
+    <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 py-4 space-y-4">
       {/* Live Status Card */}
       {loading ? (
         <div className="flex justify-center py-6">

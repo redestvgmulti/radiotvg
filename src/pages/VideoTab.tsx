@@ -126,12 +126,12 @@ const VideoTab = () => {
             </div>
           ) : (
             <>
-              <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-3 mb-4">
+              <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-3 mb-4 md:grid md:grid-cols-3 md:overflow-x-visible">
                 {videos.slice(0, 3).map((video, i) => (
                   <motion.div key={video.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.06 }} whileTap={{ scale: 0.97 }}
                     onClick={() => openVideo({ id: video.id, title: video.title, thumbnail: video.thumbnail_url, isLive: false, hlsSrc: video.hls_url || '' })}
-                    className="relative flex-shrink-0 w-[260px] rounded-2xl overflow-hidden cursor-pointer group">
+                    className="relative flex-shrink-0 w-[260px] md:w-full rounded-2xl overflow-hidden cursor-pointer group">
                     <div className="aspect-video bg-muted/30">
                       {video.thumbnail_url ? (
                         <img src={video.thumbnail_url} alt={video.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
@@ -158,7 +158,7 @@ const VideoTab = () => {
                 ))}
               </div>
 
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3 md:grid md:grid-cols-2 lg:grid-cols-3">
                 {videos.slice(3).map((video, i) => (
                   <motion.div key={video.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 + i * 0.06 }} whileTap={{ scale: 0.98 }}

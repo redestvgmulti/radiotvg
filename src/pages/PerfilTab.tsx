@@ -22,7 +22,7 @@ const PerfilTab = () => {
       </header>
 
       {/* Profile Hero Card */}
-      <div className="relative mx-4 mb-6 rounded-3xl overflow-hidden" style={{ height: '28vh', minHeight: 180, maxHeight: 260 }}>
+      <div className="relative mx-4 mb-6 rounded-3xl overflow-hidden h-[28vh] sm:h-[24vh] md:h-[22vh]" style={{ minHeight: 180, maxHeight: 300 }}>
         <img
           src={heroPerfil}
           alt="Perfil"
