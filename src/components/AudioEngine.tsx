@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useRadioStore } from '@/stores/useRadioStore';
 import Hls from 'hls.js';
+import { isYouTubeUrl, extractYouTubeId } from '@/lib/youtube';
 
 import envSertanejo from '@/assets/env-sertanejo.jpg';
 import envPoprock from '@/assets/env-poprock.jpg';
@@ -14,15 +15,57 @@ const localImageMap: Record<string, string> = {
   gospel: envGospel,
 };
 
+// YouTube IFrame API types
+interface YTPlayer {
+  playVideo: () => void;
+  pauseVideo: () => void;
+  setVolume: (v: number) => void;
+  destroy: () => void;
+}
+
+interface YTPlayerConstructor {
+  new (elementId: string, options: Record<string, unknown>): YTPlayer;
+}
+
+declare global {
+  interface Window {
+    YT?: { Player: YTPlayerConstructor; PlayerState: Record<string, number> };
+    onYouTubeIframeAPIReady?: () => void;
+  }
+}
+
+let ytApiLoaded = false;
+let ytApiLoading = false;
+const ytReadyCallbacks: (() => void)[] = [];
+
+function loadYouTubeApi(): Promise<void> {
+  if (ytApiLoaded && window.YT) return Promise.resolve();
+  return new Promise((resolve) => {
+    ytReadyCallbacks.push(resolve);
+    if (ytApiLoading) return;
+    ytApiLoading = true;
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(tag);
+    window.onYouTubeIframeAPIReady = () => {
+      ytApiLoaded = true;
+      ytReadyCallbacks.forEach((cb) => cb());
+      ytReadyCallbacks.length = 0;
+    };
+  });
+}
+
 /**
  * AudioEngine — persistent component mounted at App root.
- * Owns the <audio> element and HLS instance.
- * Never unmounts during navigation.
+ * Supports HLS streams (.m3u8) and YouTube URLs.
  */
 const AudioEngine = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const ytPlayerRef = useRef<YTPlayer | null>(null);
+  const ytContainerRef = useRef<HTMLDivElement | null>(null);
   const isPlayingRef = useRef(false);
+  const activeSourceType = useRef<'hls' | 'youtube' | null>(null);
 
   const {
     isPlaying, volume, getCurrentStreamUrl, getCurrentEnvironment,
@@ -49,22 +92,102 @@ const AudioEngine = () => {
     }
     return () => {
       hlsRef.current?.destroy();
+      ytPlayerRef.current?.destroy();
       audioRef.current?.pause();
       audioRef.current = null;
     };
   }, []);
 
-  // HLS source management — react to stream URL changes
-  const streamUrl = getCurrentStreamUrl();
-  useEffect(() => {
-    if (!streamUrl || !audioRef.current) return;
-    const audio = audioRef.current;
-
-    // Cleanup previous HLS
+  // Cleanup helpers
+  const cleanupHls = useCallback(() => {
     hlsRef.current?.destroy();
     hlsRef.current = null;
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.removeAttribute('src');
+      audioRef.current.load();
+    }
+  }, []);
+
+  const cleanupYt = useCallback(() => {
+    ytPlayerRef.current?.destroy();
+    ytPlayerRef.current = null;
+  }, []);
+
+  // Source management — react to stream URL changes
+  const streamUrl = getCurrentStreamUrl();
+
+  useEffect(() => {
+    if (!streamUrl) return;
+
+    // Cleanup previous source
+    cleanupHls();
+    cleanupYt();
     setBuffering(true);
     setStreamError(null);
+
+    if (isYouTubeUrl(streamUrl)) {
+      activeSourceType.current = 'youtube';
+      const videoId = extractYouTubeId(streamUrl);
+      if (!videoId) {
+        setStreamError('Link do YouTube inválido');
+        setBuffering(false);
+        return;
+      }
+
+      loadYouTubeApi().then(() => {
+        if (!window.YT) return;
+        // Ensure container exists
+        if (!ytContainerRef.current) return;
+
+        // Clear previous content
+        const div = document.createElement('div');
+        div.id = 'yt-audio-player';
+        ytContainerRef.current.innerHTML = '';
+        ytContainerRef.current.appendChild(div);
+
+        const player = new window.YT.Player('yt-audio-player', {
+          videoId,
+          height: '1',
+          width: '1',
+          playerVars: {
+            autoplay: isPlayingRef.current ? 1 : 0,
+            controls: 0,
+            modestbranding: 1,
+            playsinline: 1,
+          },
+          events: {
+            onReady: () => {
+              setBuffering(false);
+              player.setVolume(useRadioStore.getState().volume * 100);
+              if (isPlayingRef.current) player.playVideo();
+            },
+            onStateChange: (event: { data: number }) => {
+              // 3 = buffering, 1 = playing, 2 = paused
+              if (event.data === 3) setBuffering(true);
+              if (event.data === 1) { setBuffering(false); setStreamError(null); }
+              if (event.data === -1 || event.data === 5) setBuffering(false);
+            },
+            onError: () => {
+              setStreamError('Erro ao reproduzir YouTube');
+              setBuffering(false);
+              setTimeout(() => setStreamError(null), 4000);
+            },
+          },
+        } as Record<string, unknown>);
+
+        ytPlayerRef.current = player;
+      });
+
+      return () => {
+        cleanupYt();
+      };
+    }
+
+    // HLS path
+    activeSourceType.current = 'hls';
+    const audio = audioRef.current;
+    if (!audio) return;
 
     if (Hls.isSupported()) {
       const hls = new Hls({ enableWorker: true });
@@ -86,7 +209,6 @@ const AudioEngine = () => {
           } else {
             setStreamError('Stream indisponível');
           }
-          // Clear error after recovery attempt
           setTimeout(() => setStreamError(null), 4000);
         }
       });
@@ -96,15 +218,13 @@ const AudioEngine = () => {
       if (isPlayingRef.current) audio.play().catch(() => {});
     }
 
-    // Track buffering via audio events
     const onWaiting = () => setBuffering(true);
     const onPlaying = () => { setBuffering(false); setStreamError(null); };
     audio.addEventListener('waiting', onWaiting);
     audio.addEventListener('playing', onPlaying);
 
     return () => {
-      hlsRef.current?.destroy();
-      hlsRef.current = null;
+      cleanupHls();
       audio.removeEventListener('waiting', onWaiting);
       audio.removeEventListener('playing', onPlaying);
     };
@@ -112,15 +232,21 @@ const AudioEngine = () => {
 
   // Play/pause sync
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio || !streamUrl) return;
-    if (isPlaying) audio.play().catch(() => {});
-    else audio.pause();
+    if (!streamUrl) return;
+
+    if (activeSourceType.current === 'youtube' && ytPlayerRef.current) {
+      if (isPlaying) ytPlayerRef.current.playVideo();
+      else ytPlayerRef.current.pauseVideo();
+    } else if (activeSourceType.current === 'hls' && audioRef.current) {
+      if (isPlaying) audioRef.current.play().catch(() => {});
+      else audioRef.current.pause();
+    }
   }, [isPlaying, streamUrl]);
 
   // Volume sync
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = volume;
+    if (ytPlayerRef.current) ytPlayerRef.current.setVolume(volume * 100);
   }, [volume]);
 
   // Media Session API
@@ -137,16 +263,8 @@ const AudioEngine = () => {
       artwork: artworkUrl ? [{ src: artworkUrl, sizes: '512x512', type: 'image/jpeg' }] : [],
     });
 
-    navigator.mediaSession.setActionHandler('play', () => {
-      setPlaying(true);
-    });
-    navigator.mediaSession.setActionHandler('pause', () => {
-      setPlaying(false);
-    });
-
-    // Next/prev environment
-    const { environments: envs, currentEnvironmentSlug, setEnvironment } = useRadioStore.getState();
-    const currentIdx = envs.findIndex(e => e.slug === currentEnvironmentSlug);
+    navigator.mediaSession.setActionHandler('play', () => setPlaying(true));
+    navigator.mediaSession.setActionHandler('pause', () => setPlaying(false));
 
     navigator.mediaSession.setActionHandler('nexttrack', () => {
       const state = useRadioStore.getState();
@@ -165,8 +283,13 @@ const AudioEngine = () => {
     });
   }, [currentTrack, env, currentEnvironmentSlug, setPlaying]);
 
-  // Renders nothing — audio engine is invisible
-  return null;
+  // Hidden container for YouTube iframe (1x1 pixel, offscreen)
+  return (
+    <div
+      ref={ytContainerRef}
+      style={{ position: 'fixed', top: -9999, left: -9999, width: 1, height: 1, overflow: 'hidden' }}
+    />
+  );
 };
 
 export default AudioEngine;
