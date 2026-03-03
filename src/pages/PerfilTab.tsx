@@ -14,7 +14,7 @@ const PerfilTab = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="min-h-screen pb-24"
+      className="min-h-screen pb-36"
     >
       {/* Minimal Header */}
       <header className="px-5 pt-4 pb-2">
@@ -64,7 +64,7 @@ const PerfilTab = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full flex items-center gap-4 p-4 rounded-2xl bg-card/40 backdrop-blur-sm border border-border/20 transition-colors duration-200 hover:bg-card/60"
+              className="w-full flex items-center gap-4 p-4 rounded-2xl bg-card/50 border border-white/[0.04] transition-colors duration-200 hover:bg-card/80"
             >
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <item.icon className="h-4 w-4 text-primary" />
