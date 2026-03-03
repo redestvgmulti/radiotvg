@@ -15,7 +15,7 @@ const BottomNav = () => {
   const navigate = useNavigate();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 glass-strong bottom-safe">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 player-bar-gradient border-t border-white/[0.06] bottom-safe">
       <div className="flex items-center justify-around h-16 max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-4xl mx-auto px-2">
         {tabs.map((tab) => {
           const isActive = location.pathname === tab.path;
@@ -30,7 +30,7 @@ const BottomNav = () => {
               {isActive && (
                 <motion.div
                   layoutId="nav-indicator"
-                  className="absolute -top-0.5 w-8 h-0.5 rounded-full bg-primary"
+                  className="absolute -top-0.5 w-8 h-0.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.5)]"
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 />
               )}
