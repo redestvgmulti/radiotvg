@@ -1,0 +1,68 @@
+/* AppExplore Component Styles */
+
+.app-explore {
+    padding: 1rem 0;
+}
+
+.app-explore-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+@media (min-width: 640px) {
+    .app-explore-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .app-explore-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+.app-explore-card {
+    background: #FFFFFF;
+    border: var(--border-light);
+    padding: 1.75rem 1.25rem;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+.app-explore-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-md);
+    background: #FFFFFF;
+}
+
+.app-explore-icon-wrapper {
+    width: 3.5rem;
+    height: 3.5rem;
+    background: rgba(31, 111, 235, 0.06);
+    color: var(--primary);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.app-explore-card:hover .app-explore-icon-wrapper {
+    background: var(--primary);
+    color: #FFFFFF;
+}
+
+.app-explore-label {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+}

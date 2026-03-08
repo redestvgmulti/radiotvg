@@ -1,0 +1,83 @@
+/* ProgramSchedule Component Styles */
+
+.program-schedule {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+}
+
+.schedule-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 2rem;
+}
+
+.schedule-item {
+    display: flex;
+    align-items: center;
+    padding: 1.25rem 0.5rem;
+    border-bottom: 1px solid rgba(31, 111, 235, 0.05);
+    transition: all 0.2s;
+}
+
+.schedule-item:last-child {
+    border-bottom: none;
+}
+
+.schedule-item:hover {
+    background: rgba(31, 111, 235, 0.02);
+    transform: translateX(4px);
+}
+
+.schedule-time {
+    font-weight: 700;
+    color: var(--primary);
+    width: 4rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.schedule-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.schedule-name {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.schedule-days {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    font-weight: 500;
+}
+
+.schedule-indicator {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: #CBD5E1;
+}
+
+.schedule-item-live .schedule-indicator {
+    background: var(--primary);
+    box-shadow: 0 0 12px var(--primary);
+    animation: pulse 2s infinite ease-in-out;
+}

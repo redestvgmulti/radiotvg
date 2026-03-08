@@ -1,0 +1,16 @@
+/* Equalizer Component Styles */
+
+.equalizer-container {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 1.25rem;
+}
+
+.equalizer-bar {
+    width: 3px;
+    background: #FFFFFF;
+    border-radius: 1px;
+    animation: bounce 1.2s ease-in-out infinite;
+    transform-origin: bottom;
+}

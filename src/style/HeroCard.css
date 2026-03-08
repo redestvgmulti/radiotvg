@@ -1,0 +1,364 @@
+/* HeroCard Component Styles */
+
+.hero-card-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/5;
+    border-radius: 1.5rem;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(37, 99, 235, 0.2);
+    box-shadow: 0 25px 50px -12px rgba(37, 99, 235, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    background-color: black;
+}
+
+@media (min-width: 640px) {
+    .hero-card-container {
+        aspect-ratio: 16/9;
+    }
+}
+
+.hero-card-stream-cover {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+}
+
+.hero-card-sponsor-container {
+    position: absolute;
+    inset: 0;
+    background-color: black;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.hero-card-sponsor-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.hero-card-sponsor-image {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+}
+
+.hero-card-sponsor-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(12px);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hero-card-sponsor-badge-text {
+    font-size: 0.625rem;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.hero-card-live-container {
+    position: absolute;
+    inset: 0;
+    background-color: black;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.hero-card-live-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.hero-card-live-fallback {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+}
+
+.hero-card-live-fallback-overlay {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero-card-live-loading {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    background-color: rgb(220, 38, 38);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    color: white;
+    font-weight: bold;
+}
+
+.hero-card-mute-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(12px);
+    padding: 1rem;
+    border-radius: 9999px;
+}
+
+.hero-card-gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.2), transparent);
+    z-index: 30;
+    pointer-events: none;
+    transition: opacity 0.5s;
+}
+
+.hero-card-gradient-hidden {
+    opacity: 0;
+}
+
+.hero-card-content {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 1.5rem;
+    z-index: 40;
+    pointer-events: none;
+    transition: opacity 0.5s;
+}
+
+.hero-card-content-hidden {
+    opacity: 0;
+}
+
+.hero-card-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    pointer-events: auto;
+}
+
+.hero-card-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    overflow: hidden;
+}
+
+.hero-card-live-badge-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.hero-card-live-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 9999px;
+    background-color: rgba(220, 38, 38, 0.9);
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 10px 15px -3px rgba(127, 29, 29, 0.2);
+}
+
+.hero-card-live-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background-color: white;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+}
+
+.hero-card-program-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: white;
+    line-height: 1.25;
+}
+
+.hero-card-stream-title {
+    font-size: 1.875rem;
+    font-weight: 900;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: -0.05em;
+    filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.04));
+    line-height: 1.25;
+}
+
+.hero-card-marquee-container {
+    position: relative;
+    height: 1.5rem;
+    overflow: hidden;
+}
+
+.hero-card-live-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.875rem;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+}
+
+.hero-card-marquee {
+    position: absolute;
+    display: flex;
+    white-space: nowrap;
+    min-width: 100%;
+}
+
+.hero-card-marquee-text {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding-right: 2rem;
+}
+
+.hero-card-button-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.hero-card-play-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 9999px;
+    background-color: white;
+    color: black;
+    transition: all 0.3s;
+    box-shadow: 0 25px 50px -12px rgba(255, 255, 255, 0.2);
+}
+
+.hero-card-play-button:hover {
+    transform: scale(1.05);
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+.hero-card-play-button:active {
+    transform: scale(0.95);
+}
+
+.hero-card-volume-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    border-radius: 1rem;
+    padding: 0 1rem;
+    height: 3.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background-color 0.3s;
+}
+
+.hero-card-volume-container:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.hero-card-volume-button {
+    color: rgba(255, 255, 255, 0.6);
+    transition: color 0.3s;
+}
+
+.hero-card-volume-button:hover {
+    color: white;
+}
+
+.hero-card-volume-slider {
+    width: 100%;
+    height: 0.25rem;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 0.5rem;
+    appearance: none;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.hero-card-volume-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 0.75rem;
+    height: 0.75rem;
+    background-color: white;
+    border-radius: 9999px;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    transition: transform 0.3s;
+}
+
+.hero-card-volume-slider:hover::-webkit-slider-thumb {
+    transform: scale(1.25);
+}
+
+.hero-card-style-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 1rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s;
+    color: rgba(255, 255, 255, 0.8);
+    gap: 0.25rem;
+}
+
+.hero-card-style-button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.hero-card-style-button:active {
+    transform: scale(0.95);
+}
+
+.hero-card-style-button-label {
+    font-size: 0.5625rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}

@@ -11,7 +11,8 @@ export const useRadioStatus = () => {
 
     const fetchStatus = async () => {
       try {
-        const response = await fetch('/api/radio-status');
+        const endpoint = process.env.NEXT_PUBLIC_RADIO_STATUS_ENDPOINT || '/api/radio-status';
+        const response = await fetch(endpoint);
         if (!response.ok) return;
         const data = await response.json();
         if (!active) return;

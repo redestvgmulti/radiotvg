@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 
-const liveVideoUrl = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
+export const dynamic = 'force-dynamic';
+
+const liveVideoUrl = process.env.NEXT_PUBLIC_VIDEO_LIVE_URL || 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
 
 const programNames = {
-  MUSIC_ONLY: 'Ambient Sessions',
-  PROGRAM_LIVE: 'Cinematic Live',
-  COMMERCIAL_BREAK: 'Intermission Sequence'
+  MUSIC_ONLY: 'Flow Sessions',
+  PROGRAM_LIVE: 'Ao Vivo',
+  COMMERCIAL_BREAK: 'Intervalo'
 } as const;
 
 type Mode = keyof typeof programNames;

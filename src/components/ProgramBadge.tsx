@@ -3,18 +3,19 @@
 import { motion } from 'framer-motion';
 import { useRadioStore } from '@/store/useRadioStore';
 import { transitions } from '@/motion/presets';
+import '@/style/ProgramBadge.css';
 
 const modeMeta = {
   MUSIC_ONLY: {
-    label: 'Ambient Mode',
+    label: 'Sessão Flow',
     description: 'Fluxo musical contínuo'
   },
   PROGRAM_LIVE: {
-    label: 'Program Live',
+    label: 'Ao Vivo',
     description: 'Transmissão ao vivo'
   },
   COMMERCIAL_BREAK: {
-    label: 'Intermission',
+    label: 'Intervalo',
     description: 'Intervalo elegante'
   }
 };
@@ -31,20 +32,20 @@ export const ProgramBadge = () => {
 
   return (
     <motion.div
-      className="glass-chip flex items-center gap-4 rounded-full px-5 py-2"
+      className="program-badge-container"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={transitions.medium}
     >
       <span
-        className="h-2 w-2 rounded-full"
+        className="program-badge-dot"
         style={{ backgroundColor: modeDot[mode].color, boxShadow: modeDot[mode].glow }}
       />
-      <div>
-        <p className="text-xs uppercase tracking-[0.35em] text-text-muted">{modeMeta[mode].label}</p>
-        <p className="text-sm font-semibold text-text-primary">{programName}</p>
+      <div className="program-badge-content">
+        <p className="program-badge-label">{modeMeta[mode].label}</p>
+        <p className="program-badge-name">{programName}</p>
       </div>
-      <div className="hidden text-xs text-text-muted md:block">{modeMeta[mode].description}</div>
+      <div className="program-badge-description">{modeMeta[mode].description}</div>
     </motion.div>
   );
 };

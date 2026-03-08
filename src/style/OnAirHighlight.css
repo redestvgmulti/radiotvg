@@ -1,0 +1,100 @@
+/* OnAirHighlight Component Styles */
+
+.on-air-card {
+    background: #FFFFFF;
+    border: var(--border-light);
+    border-radius: 20px;
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow-sm);
+    margin: 1rem 0;
+    gap: 1rem;
+}
+
+.on-air-info {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.on-air-status-wrapper {
+    position: relative;
+    width: 3.5rem;
+    height: 3.5rem;
+    background: rgba(31, 111, 235, 0.08);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+}
+
+.on-air-pulse {
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid var(--primary);
+    opacity: 0.2;
+    animation: pulse 2s infinite ease-in-out;
+}
+
+.on-air-icon {
+    position: relative;
+    color: var(--primary);
+}
+
+.on-air-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.on-air-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--primary);
+    letter-spacing: 0.1em;
+}
+
+.on-air-program {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0.15rem 0;
+}
+
+.on-air-speaker {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.on-air-action {
+    background: var(--primary);
+    color: #FFFFFF;
+    padding: 0.75rem 1.5rem;
+    border-radius: 9999px;
+    font-weight: 700;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    box-shadow: 0 8px 20px rgba(31, 111, 235, 0.2);
+    transition: all 0.3s;
+}
+
+.on-air-action:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+}
+
+@keyframes ping {
+
+    75%,
+    100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}

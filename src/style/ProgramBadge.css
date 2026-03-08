@@ -1,0 +1,47 @@
+/* ProgramBadge Component Styles */
+
+.program-badge-container {
+    backdrop-filter: blur(40px);
+    background: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-radius: 9999px;
+    padding: 0.5rem 1.25rem;
+}
+
+.program-badge-dot {
+    height: 0.5rem;
+    width: 0.5rem;
+    border-radius: 9999px;
+}
+
+.program-badge-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.program-badge-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.35em;
+    color: var(--text-muted);
+}
+
+.program-badge-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.program-badge-description {
+    display: none;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+@media (min-width: 768px) {
+    .program-badge-description {
+        display: block;
+    }
+}

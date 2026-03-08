@@ -24,17 +24,26 @@ interface RadioState {
   togglePlay: () => void;
   setVolume: (volume: number) => void;
   setMuted: (muted: boolean) => void;
+  isSidebarOpen: boolean;
+  setSidebarOpen: (isOpen: boolean) => void;
+  toggleSidebar: () => void;
+  isStyleSelectorOpen: boolean;
+  setStyleSelectorOpen: (isOpen: boolean) => void;
+  toggleStyleSelector: () => void;
+  activeView: string;
+  setActiveView: (view: string) => void;
 }
 
 export const useRadioStore = create<RadioState>((set) => ({
   mode: 'MUSIC_ONLY',
-  programName: 'Ambient Sessions',
+  programName: 'Flow Sessions',
   startedAt: new Date().toISOString(),
   videoUrl: undefined,
   streamId: defaultStreamId,
   isPlaying: false,
   volume: 0.65,
   muted: false,
+  isSidebarOpen: false,
   setStream: (streamId) => set({ streamId }),
   setStatus: (status) =>
     set((state) => ({
@@ -46,5 +55,12 @@ export const useRadioStore = create<RadioState>((set) => ({
     })),
   togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),
   setVolume: (volume) => set({ volume }),
-  setMuted: (muted) => set({ muted })
+  setMuted: (muted) => set({ muted }),
+  setSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
+  toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+  isStyleSelectorOpen: false,
+  setStyleSelectorOpen: (isOpen) => set({ isStyleSelectorOpen: isOpen }),
+  toggleStyleSelector: () => set((state) => ({ isStyleSelectorOpen: !state.isStyleSelectorOpen })),
+  activeView: 'Rádio',
+  setActiveView: (view: string) => set({ activeView: view })
 }));
