@@ -1,25 +1,35 @@
 /* SponsorsCarousel Component Styles */
 
-.sponsors-carousel {
+.sponsors-section {
     width: 100%;
-    background: transparent;
-    padding: 3rem 0;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background-color: rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(4px);
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    padding: 2rem 0;
 }
 
-.sponsor-carousel-placeholder {
-    height: 100%;
-    width: 100%;
+.sponsors-carousel-placeholder {
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
+    gap: 4rem;
+    padding: 3rem 2rem;
+    background: var(--glass-bg);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 2rem;
+    backdrop-filter: blur(20px);
 }
 
-.sponsor-carousel-text {
-    font-size: 0.5625rem;
-    font-weight: bold;
-    color: rgba(255, 255, 255, 0.5);
+.sponsor-logo-placeholder {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--text-tertiary);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    transition: all 0.3s;
+    cursor: default;
+    opacity: 0.4;
+}
+
+.sponsor-logo-placeholder:hover {
+    color: var(--primary);
+    opacity: 1;
+    transform: scale(1.05);
 }

@@ -30,24 +30,20 @@
 .schedule-item {
     display: flex;
     align-items: center;
-    padding: 1.25rem 0.5rem;
-    border-bottom: 1px solid rgba(31, 111, 235, 0.05);
-    transition: all 0.2s;
-}
-
-.schedule-item:last-child {
-    border-bottom: none;
+    padding: 1.5rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 1.5rem;
 }
 
 .schedule-item:hover {
-    background: rgba(31, 111, 235, 0.02);
-    transform: translateX(4px);
+    background: rgba(255, 255, 255, 0.03);
+    transform: translateX(8px);
 }
 
 .schedule-time {
     font-weight: 800;
-    color: #1F6FEB !important;
-    /* Forçando cor sólida para visibilidade */
+    color: var(--primary) !important;
     width: 6rem;
     font-variant-numeric: tabular-nums;
     font-size: 1.125rem;
@@ -65,24 +61,41 @@
 .schedule-name {
     font-weight: 700;
     color: var(--text-primary);
-    font-size: 1.1rem;
+    font-size: 1.15rem;
 }
 
 .schedule-days {
-    font-size: 0.875rem;
-    color: var(--text-tertiary);
+    font-size: 0.9rem;
+    color: var(--text-secondary);
     font-weight: 600;
 }
 
 .schedule-indicator {
-    width: 0.5rem;
-    height: 0.5rem;
+    width: 0.6rem;
+    height: 0.6rem;
     border-radius: 50%;
-    background: #CBD5E1;
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .schedule-item-live .schedule-indicator {
-    background: var(--primary);
-    box-shadow: 0 0 12px var(--primary);
-    animation: pulse 2s infinite ease-in-out;
+    background: var(--accent-cyan);
+    box-shadow: 0 0 15px var(--accent-cyan);
+    animation: pulse-live 2s infinite ease-in-out;
+}
+
+@keyframes pulse-live {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.4);
+        opacity: 0.6;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }

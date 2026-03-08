@@ -103,21 +103,22 @@
 /* Desktop Sidebar */
 .nav-desktop-sidebar {
     width: 280px;
-    background: #FFFFFF;
-    border-right: 1px solid rgba(31, 111, 235, 0.08);
+    background: var(--glass-bg);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
     flex-direction: column;
     padding: 2.5rem 1.25rem 120px;
-    /* Adicionado padding bottom para evitar o player */
-    z-index: 50;
+    z-index: 100;
     position: fixed;
     top: 0;
     bottom: 0;
     left: 0;
 }
 
-@media (max-width: 767px) {
-    .navigation-container {
+@media (max-width: 1023px) {
+    .nav-desktop-sidebar {
         display: none;
     }
 }
@@ -145,21 +146,25 @@
     align-items: center;
     gap: 1.25rem;
     padding: 1.15rem 1.25rem;
-    border-radius: 12px;
+    border-radius: 1rem;
     color: var(--text-secondary);
     font-weight: 600;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    border: 1px solid transparent;
 }
 
 .navigation-item:hover {
-    color: var(--primary);
-    background: var(--primary-soft);
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.03);
+    transform: translateX(4px);
 }
 
 .navigation-item-active {
     color: var(--primary);
     background: var(--primary-soft);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    box-shadow: 0 10px 25px rgba(59, 130, 246, 0.1);
 }
 
 .navigation-item-active::after {

@@ -27,6 +27,19 @@ const RadioExperience = () => {
             <OnAirHighlight />
             <ProgramSchedule />
             <FeaturedVideos />
+
+            {/* Instagram Feed Section */}
+            <section className="instagram-section">
+              <div className="section-header">
+                <h2 className="section-title">No Instagram @radiotvg</h2>
+              </div>
+              <div className="instagram-grid-placeholder">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="instagram-card-placeholder" />
+                ))}
+              </div>
+            </section>
+
             <SponsorsCarousel />
           </div>
         </main>

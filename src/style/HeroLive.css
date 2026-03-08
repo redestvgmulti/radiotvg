@@ -3,26 +3,30 @@
 .hero-live {
     position: relative;
     width: 100%;
-    min-height: 520px;
+    min-height: 560px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 5rem 2rem 3rem 2rem;
-    /* Aumentado padding superior para não cortar texto */
+    padding: 6rem 2rem 4rem 2rem;
     text-align: center;
     color: #FFFFFF;
     overflow: hidden;
-    border-radius: 2.5rem;
+    border-radius: 3rem;
     z-index: 10;
-    margin-top: 1.5rem;
+    margin-top: 2rem;
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #1e3a8a 100%);
+    box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-@media (min-width: 768px) {
-    .hero-live {
-        min-height: 520px;
-        padding: 4rem;
-    }
+.hero-live::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(59, 130, 246, 0.4) 0%, transparent 70%);
+    opacity: 0.6;
+    pointer-events: none;
 }
 
 .hero-live-bg {
@@ -66,22 +70,21 @@
 }
 
 .hero-live-program {
-    font-size: clamp(2.5rem, 8vw, 5rem);
-    /* Reduzido levemente para evitar corte */
-    font-weight: 900;
-    line-height: 0.95;
-    /* Mais compacto para evitar corte vertical */
-    margin-bottom: 1rem;
-    letter-spacing: -0.04em;
+    font-size: clamp(2rem, 10vw, 6rem);
+    font-weight: 950;
+    /* Estilo Display ultra pesado */
+    line-height: 0.9;
+    margin-bottom: 2rem;
+    letter-spacing: -0.05em;
     color: #FFFFFF;
-    text-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    text-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
 
 .hero-live-host {
-    font-size: 1.25rem;
-    color: rgba(255, 255, 255, 0.8);
+    font-size: clamp(1rem, 4vw, 1.25rem);
+    color: rgba(255, 255, 255, 0.7);
     font-weight: 500;
-    margin-bottom: 3rem;
+    margin-bottom: clamp(2rem, 8vw, 4rem);
 }
 
 .hero-live-controls {
@@ -89,6 +92,7 @@
     flex-direction: column;
     align-items: center;
     gap: 2rem;
+    width: 100%;
 }
 
 .hero-live-play-btn {
@@ -128,20 +132,26 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 0.875rem 1.75rem;
+    background: rgba(255, 255, 255, 0.08);
+    /* Mais sutil */
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 1rem 2.25rem;
+    /* Maior e mais confortável */
     border-radius: 9999px;
     font-weight: 600;
     color: #FFFFFF;
-    backdrop-filter: blur(12px);
-    transition: all 0.3s;
-    margin-top: 1rem;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-top: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
 .hero-live-whatsapp:hover {
-    background: rgba(255, 255, 255, 0.25);
-    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 /* Animations */
