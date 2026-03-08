@@ -32,7 +32,7 @@ export const AppExplore = () => {
                         className="app-explore-card"
                     >
                         <div className="app-explore-icon-wrapper">
-                            <item.icon size={24} />
+                            <item.icon size={32} />
                         </div>
                         <span className="app-explore-label">{item.label}</span>
                     </motion.button>

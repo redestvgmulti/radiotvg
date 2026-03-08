@@ -21,8 +21,8 @@ const RadioExperience = () => {
         <Navigation />
 
         <main className="radio-experience-main">
-          <HeroLive />
           <div className="home-content-container">
+            <HeroLive />
             <AppExplore />
             <OnAirHighlight />
             <ProgramSchedule />

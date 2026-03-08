@@ -107,7 +107,8 @@
     border-right: 1px solid rgba(31, 111, 235, 0.08);
     display: flex;
     flex-direction: column;
-    padding: 2.5rem 1.25rem;
+    padding: 2.5rem 1.25rem 120px;
+    /* Adicionado padding bottom para evitar o player */
     z-index: 50;
     position: fixed;
     top: 0;
@@ -128,8 +129,7 @@
 .navigation-logo {
     height: 48px;
     width: auto;
-    filter: brightness(0.2);
-    /* Adjust logo for light theme if it was white */
+    transition: all 0.3s ease;
 }
 
 .navigation-section {

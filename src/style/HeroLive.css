@@ -3,22 +3,24 @@
 .hero-live {
     position: relative;
     width: 100%;
-    min-height: 70vh;
+    min-height: 520px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 2rem;
+    padding: 5rem 2rem 3rem 2rem;
+    /* Aumentado padding superior para não cortar texto */
     text-align: center;
-    color: var(--text-primary);
+    color: #FFFFFF;
     overflow: hidden;
     border-radius: 2.5rem;
     z-index: 10;
+    margin-top: 1.5rem;
 }
 
 @media (min-width: 768px) {
     .hero-live {
-        min-height: 80vh;
+        min-height: 520px;
         padding: 4rem;
     }
 }
@@ -64,13 +66,15 @@
 }
 
 .hero-live-program {
-    font-size: clamp(3rem, 10vw, 5.5rem);
+    font-size: clamp(2.5rem, 8vw, 5rem);
+    /* Reduzido levemente para evitar corte */
     font-weight: 900;
-    line-height: 1.05;
+    line-height: 0.95;
+    /* Mais compacto para evitar corte vertical */
     margin-bottom: 1rem;
     letter-spacing: -0.04em;
     color: #FFFFFF;
-    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    text-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
 }
 
 .hero-live-host {
