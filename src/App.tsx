@@ -7,14 +7,18 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import BottomNav from "./components/BottomNav";
 import AudioEngine from "./components/AudioEngine";
 import PlaybackController from "./components/PlaybackController";
+import ListeningTracker from "./components/ListeningTracker";
 import ErrorBoundary from "./components/ErrorBoundary";
 import AdminLayout from "./components/AdminLayout";
 import { Loader2 } from "lucide-react";
 
-// Public pages — direct import (small, always needed)
+// Public pages
 import AudioTab from "./pages/AudioTab";
 import ProgramasTab from "./pages/ProgramasTab";
 import PerfilTab from "./pages/PerfilTab";
+import RewardsTab from "./pages/RewardsTab";
+import ListenerLogin from "./pages/ListenerLogin";
+import ListenerSignup from "./pages/ListenerSignup";
 import AdminLogin from "./pages/AdminLogin";
 import NotFound from "./pages/NotFound";
 
@@ -45,12 +49,15 @@ const AppLayout = () => {
         {/* Public routes */}
         <Route path="/" element={<AudioTab />} />
         <Route path="/programas" element={<ProgramasTab />} />
+        <Route path="/premios" element={<RewardsTab />} />
         <Route path="/perfil" element={<PerfilTab />} />
+        <Route path="/login" element={<ListenerLogin />} />
+        <Route path="/signup" element={<ListenerSignup />} />
 
-        {/* Admin login — no layout wrapper */}
+        {/* Admin login */}
         <Route path="/admin/login" element={<AdminLogin />} />
 
-        {/* Admin routes — wrapped in AdminLayout + Suspense */}
+        {/* Admin routes */}
         <Route path="/admin" element={<AdminLayout><Suspense fallback={<AdminFallback />}><AdminDashboard /></Suspense></AdminLayout>} />
         <Route path="/admin/streaming" element={<AdminLayout><Suspense fallback={<AdminFallback />}><AdminStreaming /></Suspense></AdminLayout>} />
         <Route path="/admin/ads" element={<AdminLayout><Suspense fallback={<AdminFallback />}><AdminAds /></Suspense></AdminLayout>} />
@@ -75,6 +82,7 @@ const App = () => (
         <BrowserRouter>
           <AudioEngine />
           <PlaybackController />
+          <ListeningTracker />
           <AppLayout />
         </BrowserRouter>
       </ErrorBoundary>
