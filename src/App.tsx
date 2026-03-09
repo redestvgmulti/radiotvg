@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import BottomNav from "./components/BottomNav";
 import AudioEngine from "./components/AudioEngine";
+import InAppBrowserBanner from "./components/InAppBrowserBanner";
 import PersistentPlayer from "./components/PersistentPlayer";
 import SignupPromoModal from "./components/SignupPromoModal";
 import ListeningTracker from "./components/ListeningTracker";
