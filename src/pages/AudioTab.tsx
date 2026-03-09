@@ -40,7 +40,7 @@ const AudioTab = () => {
   const navigate = useNavigate();
 
   const [programs, setPrograms] = useState<Program[]>([]);
-  const [videos, setVideos] = useState<Video[]>([]);
+  
 
   useEffect(() => {
     const load = async () => {
