@@ -367,9 +367,52 @@ const AudioEngine = () => {
       };
     }
 
-    // HLS path
-    activeSourceType.current = 'hls';
-    initHls(streamUrl);
+    // Determine if this is an HLS stream or a direct audio stream (Icecast/SHOUTcast)
+    const isHlsStream = streamUrl.includes('.m3u8');
+    activeSourceType.current = 'hls'; // reuse same path for both
+
+    if (isHlsStream) {
+      initHls(streamUrl);
+    } else {
+      // Direct audio stream (Icecast/SHOUTcast MP3/AAC) — just set src
+      const audio = audioRef.current;
+      if (audio) {
+        audio.src = streamUrl;
+        setBuffering(false);
+        if (isPlayingRef.current) audio.play().catch(() => {});
+        logAudioState('Direct stream loaded', streamUrl);
+
+        // Error recovery for direct streams
+        const onDirectError = () => {
+          logAudioState('Direct stream error', 'will retry in 10s');
+          setStreamError('Reconectando ao stream...');
+          hlsRetryTimeoutRef.current = setTimeout(() => {
+            logAudioState('Direct stream retry', 'reassigning source');
+            audio.src = streamUrl;
+            setStreamError(null);
+            if (isPlayingRef.current) audio.play().catch(() => {});
+          }, 10000);
+        };
+        audio.addEventListener('error', onDirectError);
+
+        // iOS interruption recovery
+        const onDirectPause = () => {
+          if (isPlayingRef.current) {
+            setTimeout(() => {
+              if (isPlayingRef.current && audio.paused) {
+                audio.play().catch(() => {});
+              }
+            }, 1000);
+          }
+        };
+        audio.addEventListener('pause', onDirectPause);
+
+        (audio as any).__nativeCleanup = () => {
+          audio.removeEventListener('error', onDirectError);
+          audio.removeEventListener('pause', onDirectPause);
+        };
+      }
+    }
 
     const audio = audioRef.current;
     if (!audio) return;
