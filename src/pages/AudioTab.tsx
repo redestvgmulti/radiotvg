@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import LiveBadge from '@/components/LiveBadge';
 import EnvironmentSelector from '@/components/EnvironmentSelector';
 import AdDisplay from '@/components/AdDisplay';
-import PersistentPlayer from '@/components/PersistentPlayer';
 import { useRadioStore } from '@/stores/useRadioStore';
 import { supabase } from '@/integrations/supabase/client';
 import logoRadio from '@/assets/logo-radio-tvg.png';
