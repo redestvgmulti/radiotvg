@@ -175,6 +175,9 @@ const AudioEngine = () => {
       hlsRetryTimeoutRef.current = null;
     }
     if (audioRef.current) {
+      // Clean up Safari native listeners if present
+      (audioRef.current as any).__nativeCleanup?.();
+      delete (audioRef.current as any).__nativeCleanup;
       audioRef.current.pause();
       audioRef.current.removeAttribute('src');
       audioRef.current.load();
