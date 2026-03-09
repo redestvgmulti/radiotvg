@@ -1,13 +1,12 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Radio, Tv, LayoutGrid, User, Settings } from 'lucide-react';
+import { Radio, LayoutGrid, Gift, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const tabs = [
   { path: '/', label: 'Rádio', icon: Radio },
-  { path: '/video', label: 'Vídeo', icon: Tv },
   { path: '/programas', label: 'Programas', icon: LayoutGrid },
+  { path: '/rewards', label: 'Rewards', icon: Gift },
   { path: '/perfil', label: 'Perfil', icon: User },
-  { path: '/config', label: 'Config', icon: Settings },
 ];
 
 const BottomNav = () => {
