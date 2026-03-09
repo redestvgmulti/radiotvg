@@ -297,53 +297,6 @@ const AudioTab = () => {
         </section>
       )}
 
-      {/* ===== VÍDEOS EM DESTAQUE ===== */}
-      {videos.length > 0 && (
-        <section className="mt-7">
-          <div className="flex items-center justify-between mb-3 px-5">
-            <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em]">Vídeos em Destaque</h2>
-            <button onClick={() => navigate('/video')} className="text-[10px] text-primary font-semibold flex items-center gap-0.5">
-              Ver todos <ChevronRight className="h-3 w-3" />
-            </button>
-          </div>
-          <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 pb-2">
-            {videos.map((video, i) => (
-              <motion.div
-                key={video.id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.06 }}
-                onClick={() => navigate('/video')}
-                className="relative flex-shrink-0 w-[220px] rounded-2xl overflow-hidden cursor-pointer group"
-              >
-                <div className="aspect-video bg-card">
-                  {video.thumbnail_url ? (
-                    <img src={video.thumbnail_url} alt={video.title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Film className="h-8 w-8 text-muted-foreground/20" />
-                    </div>
-                  )}
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="w-10 h-10 rounded-full bg-primary/80 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                    <Play className="h-4 w-4 text-primary-foreground ml-0.5" />
-                  </div>
-                </div>
-                {video.duration && (
-                  <span className="absolute top-2 right-2 text-[9px] font-bold bg-black/70 backdrop-blur-sm text-white px-2 py-0.5 rounded-full">
-                    {video.duration}
-                  </span>
-                )}
-                <div className="absolute bottom-0 inset-x-0 p-3">
-                  <p className="text-white text-xs font-semibold leading-tight line-clamp-2 drop-shadow-md">{video.title}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* ===== PATROCINADORES ===== */}
       <section className="px-4 mt-7 mb-4">
