@@ -14,55 +14,101 @@ export type Database = {
   }
   public: {
     Tables: {
-      program_gallery: {
+      ads: {
         Row: {
           created_at: string
-          duration: string | null
+          display_duration: number
           id: string
           is_active: boolean
+          link_url: string
           media_type: string
-          media_url: string | null
-          program_id: string
+          media_url: string
+          name: string
           sort_order: number
-          thumbnail_url: string | null
-          title: string
-          updated_at: string
+          station_ids: string[]
         }
         Insert: {
           created_at?: string
-          duration?: string | null
+          display_duration?: number
           id?: string
           is_active?: boolean
+          link_url?: string
           media_type?: string
-          media_url?: string | null
-          program_id: string
+          media_url?: string
+          name: string
           sort_order?: number
-          thumbnail_url?: string | null
-          title: string
-          updated_at?: string
+          station_ids?: string[]
         }
         Update: {
           created_at?: string
-          duration?: string | null
+          display_duration?: number
           id?: string
           is_active?: boolean
+          link_url?: string
           media_type?: string
-          media_url?: string | null
-          program_id?: string
+          media_url?: string
+          name?: string
           sort_order?: number
-          thumbnail_url?: string | null
-          title?: string
-          updated_at?: string
+          station_ids?: string[]
         }
-        Relationships: [
-          {
-            foreignKeyName: "program_gallery_program_id_fkey"
-            columns: ["program_id"]
-            isOneToOne: false
-            referencedRelation: "programs"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
+      }
+      boosters: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          is_active: boolean
+          multiplier: number
+          start_date: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          is_active?: boolean
+          multiplier?: number
+          start_date: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          is_active?: boolean
+          multiplier?: number
+          start_date?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string
+          created_at: string
+          display_name: string
+          id: string
+          total_listening_minutes: number
+          total_points: number
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string
+          created_at?: string
+          display_name?: string
+          id?: string
+          total_listening_minutes?: number
+          total_points?: number
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string
+          created_at?: string
+          display_name?: string
+          id?: string
+          total_listening_minutes?: number
+          total_points?: number
+          user_id?: string
+        }
+        Relationships: []
       }
       programs: {
         Row: {
@@ -74,6 +120,7 @@ export type Database = {
           is_active: boolean
           name: string
           start_time: string
+          station_id: string | null
           updated_at: string
         }
         Insert: {
@@ -85,6 +132,7 @@ export type Database = {
           is_active?: boolean
           name: string
           start_time: string
+          station_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -96,9 +144,18 @@ export type Database = {
           is_active?: boolean
           name?: string
           start_time?: string
+          station_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "programs_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stream_environments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       radio_settings: {
         Row: {
@@ -127,6 +184,68 @@ export type Database = {
           label?: string
           updated_at?: string
           value?: string
+        }
+        Relationships: []
+      }
+      redemptions: {
+        Row: {
+          id: string
+          points_spent: number
+          redeemed_at: string
+          reward_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          points_spent?: number
+          redeemed_at?: string
+          reward_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          points_spent?: number
+          redeemed_at?: string
+          reward_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "redemptions_reward_id_fkey"
+            columns: ["reward_id"]
+            isOneToOne: false
+            referencedRelation: "rewards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rewards: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          is_active: boolean
+          name: string
+          partner: string
+          points_cost: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          name: string
+          partner?: string
+          points_cost?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          name?: string
+          partner?: string
+          points_cost?: number
         }
         Relationships: []
       }
@@ -223,45 +342,6 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
-        }
-        Relationships: []
-      }
-      videos: {
-        Row: {
-          created_at: string
-          duration: string | null
-          hls_url: string | null
-          id: string
-          is_active: boolean
-          sort_order: number
-          thumbnail_url: string | null
-          title: string
-          updated_at: string
-          views_count: number | null
-        }
-        Insert: {
-          created_at?: string
-          duration?: string | null
-          hls_url?: string | null
-          id?: string
-          is_active?: boolean
-          sort_order?: number
-          thumbnail_url?: string | null
-          title: string
-          updated_at?: string
-          views_count?: number | null
-        }
-        Update: {
-          created_at?: string
-          duration?: string | null
-          hls_url?: string | null
-          id?: string
-          is_active?: boolean
-          sort_order?: number
-          thumbnail_url?: string | null
-          title?: string
-          updated_at?: string
-          views_count?: number | null
         }
         Relationships: []
       }
