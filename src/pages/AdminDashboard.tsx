@@ -35,7 +35,7 @@ const AdminDashboard = () => {
       label: 'OPERAÇÃO',
       items: [
         { icon: Radio, label: 'Streams', desc: 'Gerenciar estações', path: '/admin/streaming' },
-        { icon: Megaphone, label: 'Ads', desc: 'Anúncios e patrocínios', path: '/admin/sponsors' },
+        { icon: Megaphone, label: 'Ads', desc: 'Anúncios e patrocínios', path: '/admin/ads' },
       ],
     },
     {

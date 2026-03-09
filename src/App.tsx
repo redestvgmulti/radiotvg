@@ -21,8 +21,10 @@ import NotFound from "./pages/NotFound";
 // Admin pages — lazy loaded
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminStreaming = lazy(() => import("./pages/AdminStreaming"));
-const AdminSponsors = lazy(() => import("./pages/AdminSponsors"));
+const AdminAds = lazy(() => import("./pages/AdminAds"));
 const AdminPrograms = lazy(() => import("./pages/AdminPrograms"));
+const AdminRewards = lazy(() => import("./pages/AdminRewards"));
+const AdminBoosters = lazy(() => import("./pages/AdminBoosters"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 
 const queryClient = new QueryClient();
@@ -51,8 +53,10 @@ const AppLayout = () => {
         {/* Admin routes — wrapped in AdminLayout + Suspense */}
         <Route path="/admin" element={<AdminLayout><Suspense fallback={<AdminFallback />}><AdminDashboard /></Suspense></AdminLayout>} />
         <Route path="/admin/streaming" element={<AdminLayout><Suspense fallback={<AdminFallback />}><AdminStreaming /></Suspense></AdminLayout>} />
-        <Route path="/admin/sponsors" element={<AdminLayout><Suspense fallback={<AdminFallback />}><AdminSponsors /></Suspense></AdminLayout>} />
+        <Route path="/admin/ads" element={<AdminLayout><Suspense fallback={<AdminFallback />}><AdminAds /></Suspense></AdminLayout>} />
         <Route path="/admin/programs" element={<AdminLayout><Suspense fallback={<AdminFallback />}><AdminPrograms /></Suspense></AdminLayout>} />
+        <Route path="/admin/rewards" element={<AdminLayout><Suspense fallback={<AdminFallback />}><AdminRewards /></Suspense></AdminLayout>} />
+        <Route path="/admin/boosters" element={<AdminLayout><Suspense fallback={<AdminFallback />}><AdminBoosters /></Suspense></AdminLayout>} />
         <Route path="/admin/users" element={<AdminLayout><Suspense fallback={<AdminFallback />}><AdminUsers /></Suspense></AdminLayout>} />
 
         <Route path="*" element={<NotFound />} />
