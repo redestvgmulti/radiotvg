@@ -92,7 +92,6 @@ const PerfilTab = () => {
 
         {/* Instagram Feed (logged out) */}
         <InstagramSection />
-        <PersistentPlayer />
       </motion.div>
     );
   }
