@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Headphones, Loader2 } from 'lucide-react';
-import PersistentPlayer from '@/components/PersistentPlayer';
 import { useRadioStore, StreamEnvironment } from '@/stores/useRadioStore';
 import logoRadio from '@/assets/logo-radio-tvg.png';
 import { supabase } from '@/integrations/supabase/client';
@@ -150,7 +149,6 @@ const ProgramasTab = () => {
         </div>
       )}
 
-      <PersistentPlayer />
     </motion.div>
   );
 };

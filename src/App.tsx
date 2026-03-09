@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import BottomNav from "./components/BottomNav";
 import AudioEngine from "./components/AudioEngine";
-import PlaybackController from "./components/PlaybackController";
+import PersistentPlayer from "./components/PersistentPlayer";
 import SignupPromoModal from "./components/SignupPromoModal";
 import ListeningTracker from "./components/ListeningTracker";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -69,6 +69,7 @@ const AppLayout = () => {
 
         <Route path="*" element={<NotFound />} />
       </Routes>
+      {!isAdmin && <PersistentPlayer />}
       {!isAdmin && <BottomNav />}
     </div>
   );
@@ -82,7 +83,6 @@ const App = () => (
       <ErrorBoundary>
         <BrowserRouter>
           <AudioEngine />
-          <PlaybackController />
           <SignupPromoModal />
           <ListeningTracker />
           <AppLayout />

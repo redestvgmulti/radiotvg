@@ -18,31 +18,49 @@ interface Program {
   start_time: string;
   end_time: string;
   is_active: boolean;
+  station_id: string | null;
 }
 
-const emptyForm = { name: '', host: '', day_of_week: 1, start_time: '08:00', end_time: '09:00' };
+interface Station {
+  id: string;
+  label: string;
+}
+
+const emptyForm = { name: '', host: '', day_of_week: 1, start_time: '08:00', end_time: '09:00', station_id: '' };
 
 const AdminPrograms = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [programs, setPrograms] = useState<Program[]>([]);
+  const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
-  const fetchPrograms = async () => {
-    const { data } = await supabase.from('programs').select('*').order('day_of_week').order('start_time');
-    setPrograms((data as Program[]) || []);
+  const fetchData = async () => {
+    const [programsRes, stationsRes] = await Promise.all([
+      supabase.from('programs').select('*').order('day_of_week').order('start_time'),
+      supabase.from('stream_environments').select('id, label').order('sort_order'),
+    ]);
+    setPrograms((programsRes.data as Program[]) || []);
+    setStations((stationsRes.data as Station[]) || []);
     setLoading(false);
   };
 
-  useEffect(() => { fetchPrograms(); }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const handleSave = async () => {
     if (!form.name.trim()) return toast({ title: 'Nome obrigatório', variant: 'destructive' });
-    const payload = { name: form.name, host: form.host, day_of_week: form.day_of_week, start_time: form.start_time, end_time: form.end_time };
+    const payload = {
+      name: form.name,
+      host: form.host,
+      day_of_week: form.day_of_week,
+      start_time: form.start_time,
+      end_time: form.end_time,
+      station_id: form.station_id || null,
+    };
     const { error } = editingId
       ? await supabase.from('programs').update(payload).eq('id', editingId)
       : await supabase.from('programs').insert(payload);
@@ -51,11 +69,18 @@ const AdminPrograms = () => {
     setShowForm(false);
     setEditingId(null);
     setForm(emptyForm);
-    fetchPrograms();
+    fetchData();
   };
 
   const handleEdit = (p: Program) => {
-    setForm({ name: p.name, host: p.host, day_of_week: p.day_of_week, start_time: p.start_time.slice(0, 5), end_time: p.end_time.slice(0, 5) });
+    setForm({
+      name: p.name,
+      host: p.host,
+      day_of_week: p.day_of_week,
+      start_time: p.start_time.slice(0, 5),
+      end_time: p.end_time.slice(0, 5),
+      station_id: p.station_id || '',
+    });
     setEditingId(p.id);
     setShowForm(true);
   };
@@ -63,13 +88,15 @@ const AdminPrograms = () => {
   const handleDelete = async (id: string) => {
     await supabase.from('programs').delete().eq('id', id);
     toast({ title: 'Programa removido' });
-    fetchPrograms();
+    fetchData();
   };
 
   const handleToggle = async (id: string, is_active: boolean) => {
     await supabase.from('programs').update({ is_active }).eq('id', id);
-    fetchPrograms();
+    fetchData();
   };
+
+  const getStationLabel = (id: string | null) => stations.find(s => s.id === id)?.label;
 
   const filtered = selectedDay !== null ? programs.filter(p => p.day_of_week === selectedDay) : programs;
 
@@ -97,6 +124,13 @@ const AdminPrograms = () => {
             <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
               {DAYS.map((d, i) => <SelectItem key={i} value={String(i)}>{d}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={form.station_id} onValueChange={v => setForm(f => ({ ...f, station_id: v === '__none__' ? '' : v }))}>
+            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Estação (todas)" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">Todas as estações</SelectItem>
+              {stations.map(s => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
             </SelectContent>
           </Select>
           <div className="flex gap-2">
@@ -142,7 +176,14 @@ const AdminPrograms = () => {
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
                 {p.host && <p className="text-[10px] text-muted-foreground truncate">{p.host}</p>}
-                <p className="text-[9px] text-muted-foreground/60">{DAYS[p.day_of_week]}</p>
+                <div className="flex items-center gap-1">
+                  <p className="text-[9px] text-muted-foreground/60">{DAYS[p.day_of_week]}</p>
+                  {p.station_id && (
+                    <span className="text-[8px] bg-muted px-1.5 py-0.5 rounded-full text-muted-foreground font-medium">
+                      {getStationLabel(p.station_id) || 'Estação'}
+                    </span>
+                  )}
+                </div>
               </div>
               <Switch checked={p.is_active} onCheckedChange={v => handleToggle(p.id, v)} className="scale-75" />
               <button onClick={() => handleEdit(p)} className="h-6 w-6 rounded bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground">
