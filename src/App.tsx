@@ -42,11 +42,8 @@ const AppLayout = () => {
       <Routes>
         {/* Public routes */}
         <Route path="/" element={<AudioTab />} />
-        <Route path="/video" element={<VideoTab />} />
         <Route path="/programas" element={<ProgramasTab />} />
-        <Route path="/programas/:id" element={<ProgramaDetalhes />} />
         <Route path="/perfil" element={<PerfilTab />} />
-        <Route path="/config" element={<ConfigTab />} />
 
         {/* Admin login — no layout wrapper */}
         <Route path="/admin/login" element={<AdminLogin />} />
