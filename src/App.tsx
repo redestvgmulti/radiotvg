@@ -83,6 +83,7 @@ const App = () => (
       <Sonner />
       <ErrorBoundary>
         <BrowserRouter>
+          <InAppBrowserBanner />
           <AudioEngine />
           <SignupPromoModal />
           <ListeningTracker />
