@@ -13,11 +13,8 @@ import { Loader2 } from "lucide-react";
 
 // Public pages — direct import (small, always needed)
 import AudioTab from "./pages/AudioTab";
-import VideoTab from "./pages/VideoTab";
 import ProgramasTab from "./pages/ProgramasTab";
-import ProgramaDetalhes from "./pages/ProgramaDetalhes";
 import PerfilTab from "./pages/PerfilTab";
-import ConfigTab from "./pages/ConfigTab";
 import AdminLogin from "./pages/AdminLogin";
 import NotFound from "./pages/NotFound";
 
