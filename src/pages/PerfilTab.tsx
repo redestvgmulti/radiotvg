@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Trophy, Clock, Gift, ChevronRight, LogIn, LogOut, Loader2, Star } from 'lucide-react';
+import { User, Trophy, Clock, Gift, ChevronRight, LogIn, LogOut, Loader2, Star, Instagram } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import PersistentPlayer from '@/components/PersistentPlayer';
 import heroPerfil from '@/assets/hero-perfil.jpg';
 
 interface Profile {
@@ -19,6 +20,8 @@ interface Redemption {
   redeemed_at: string;
   reward_id: string;
 }
+
+const INSTAGRAM_HANDLE = 'radiotvg';
 
 const PerfilTab = () => {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -87,6 +90,10 @@ const PerfilTab = () => {
             Criar conta
           </motion.button>
         </div>
+
+        {/* Instagram Feed (logged out) */}
+        <InstagramSection />
+        <PersistentPlayer />
       </motion.div>
     );
   }
@@ -157,7 +164,7 @@ const PerfilTab = () => {
 
           {/* Redemption History */}
           {redemptions.length > 0 && (
-            <div className="px-4">
+            <div className="px-4 mb-5">
               <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.15em] mb-3 px-1">Últimas Trocas</p>
               <div className="space-y-2">
                 {redemptions.map(r => (
@@ -173,8 +180,11 @@ const PerfilTab = () => {
             </div>
           )}
 
+          {/* Instagram Feed */}
+          <InstagramSection />
+
           {/* Logout */}
-          <div className="px-4 mt-6">
+          <div className="px-4 mt-6 mb-4">
             <motion.button whileTap={{ scale: 0.98 }} onClick={signOut}
               className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-destructive/10 text-destructive font-semibold text-sm border border-destructive/20">
               <LogOut className="h-4 w-4" /> Sair da conta
@@ -182,8 +192,37 @@ const PerfilTab = () => {
           </div>
         </>
       )}
+      <PersistentPlayer />
     </motion.div>
   );
 };
+
+// Instagram Feed Section
+const InstagramSection = () => (
+  <section className="px-4 mt-6">
+    <div className="flex items-center justify-between mb-3 px-1">
+      <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-1.5">
+        <Instagram className="h-3.5 w-3.5" /> Instagram
+      </h2>
+      <a href={`https://instagram.com/${INSTAGRAM_HANDLE}`} target="_blank" rel="noopener noreferrer"
+        className="text-[10px] text-primary font-semibold flex items-center gap-0.5">
+        @{INSTAGRAM_HANDLE} <ChevronRight className="h-3 w-3" />
+      </a>
+    </div>
+    <div className="rounded-2xl bg-card border border-border overflow-hidden">
+      <a href={`https://instagram.com/${INSTAGRAM_HANDLE}`} target="_blank" rel="noopener noreferrer"
+        className="flex items-center gap-3 p-4 hover:bg-card/80 transition-colors">
+        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 via-pink-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+          <Instagram className="h-5 w-5 text-white" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-foreground">@{INSTAGRAM_HANDLE}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Siga-nos para novidades e bastidores</p>
+        </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground/40 flex-shrink-0" />
+      </a>
+    </div>
+  </section>
+);
 
 export default PerfilTab;
