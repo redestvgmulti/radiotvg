@@ -53,20 +53,19 @@ const RewardsTab = () => {
     if (!confirm(`Trocar ${reward.points_cost} pontos por "${reward.name}"?`)) return;
 
     setRedeeming(reward.id);
-    // Deduct points
-    const { error: updateErr } = await supabase.from('profiles').update({ total_points: userPoints - reward.points_cost }).eq('user_id', user.id);
-    if (updateErr) { toast({ title: 'Erro', description: updateErr.message, variant: 'destructive' }); setRedeeming(null); return; }
-
-    // Create redemption
-    const { error: redeemErr } = await supabase.from('redemptions').insert({
-      user_id: user.id,
-      reward_id: reward.id,
-      points_spent: reward.points_cost,
+    const { data, error } = await supabase.rpc('redeem_reward', {
+      _user_id: user.id,
+      _reward_id: reward.id,
     });
-    if (redeemErr) { toast({ title: 'Erro', description: redeemErr.message, variant: 'destructive' }); setRedeeming(null); return; }
+
+    if (error) {
+      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      setRedeeming(null);
+      return;
+    }
 
     toast({ title: '🎉 Resgate realizado!', description: `Você resgatou "${reward.name}"` });
-    setUserPoints(prev => prev - reward.points_cost);
+    setUserPoints((data as any).remaining_points);
     setRedeeming(null);
   };
 

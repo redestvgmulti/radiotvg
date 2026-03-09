@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, Save, Loader2, Power, Pencil, X } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Power, Pencil, X, Plus, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -16,12 +16,17 @@ interface StreamEnv {
   sort_order: number;
 }
 
+const emptyNew = { label: '', slug: '', stream_url: '', image_url: '', sort_order: 0 };
+
 const AdminStreaming = () => {
   const [environments, setEnvironments] = useState<StreamEnv[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<StreamEnv>>({});
+  const [showNew, setShowNew] = useState(false);
+  const [newForm, setNewForm] = useState(emptyNew);
+  const [creating, setCreating] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -59,6 +64,34 @@ const AdminStreaming = () => {
     setSaving(null);
   };
 
+  const handleCreate = async () => {
+    if (!newForm.label.trim() || !newForm.slug.trim()) {
+      toast({ title: 'Nome e slug obrigatórios', variant: 'destructive' });
+      return;
+    }
+    setCreating(true);
+    const { error } = await supabase.from('stream_environments').insert({
+      label: newForm.label,
+      slug: newForm.slug,
+      stream_url: newForm.stream_url,
+      image_url: newForm.image_url,
+      sort_order: newForm.sort_order,
+      is_active: true,
+    });
+    if (error) { toast({ title: 'Erro', description: error.message, variant: 'destructive' }); }
+    else { toast({ title: 'Ambiente criado!' }); setShowNew(false); setNewForm(emptyNew); fetchEnvironments(); }
+    setCreating(false);
+  };
+
+  const handleDelete = async (env: StreamEnv) => {
+    if (!confirm(`Excluir "${env.label}"? Esta ação não pode ser desfeita.`)) return;
+    setSaving(env.id);
+    const { error } = await supabase.from('stream_environments').delete().eq('id', env.id);
+    if (error) toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    else { toast({ title: 'Ambiente removido' }); fetchEnvironments(); }
+    setSaving(null);
+  };
+
   const InputField = ({ label, value, onChange, placeholder, type = 'text' }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string }) => (
     <div>
       <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">{label}</label>
@@ -77,7 +110,34 @@ const AdminStreaming = () => {
           <h1 className="text-sm font-bold text-foreground">Streaming</h1>
           <p className="text-[10px] text-muted-foreground">Áudio · Ambientes</p>
         </div>
+        <button onClick={() => setShowNew(!showNew)}
+          className="h-7 px-2.5 rounded-md bg-primary text-primary-foreground text-[10px] font-bold flex items-center gap-1">
+          <Plus className="h-3 w-3" /> Novo
+        </button>
       </div>
+
+      {/* New environment form */}
+      <AnimatePresence>
+        {showNew && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-b border-border">
+            <div className="px-4 py-3 space-y-2 bg-muted/30">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase">Novo Ambiente</p>
+              <InputField label="Nome" value={newForm.label} onChange={v => setNewForm(f => ({ ...f, label: v }))} placeholder="Ex: Sertanejo" />
+              <InputField label="Slug (único)" value={newForm.slug} onChange={v => setNewForm(f => ({ ...f, slug: v }))} placeholder="Ex: sertanejo" />
+              <InputField label="URL do Stream (HLS)" value={newForm.stream_url} onChange={v => setNewForm(f => ({ ...f, stream_url: v }))} placeholder="https://stream.exemplo.com/live.m3u8" type="url" />
+              <InputField label="URL da Imagem" value={newForm.image_url} onChange={v => setNewForm(f => ({ ...f, image_url: v }))} placeholder="https://exemplo.com/imagem.jpg" type="url" />
+              <InputField label="Ordem" value={String(newForm.sort_order)} onChange={v => setNewForm(f => ({ ...f, sort_order: parseInt(v) || 0 }))} type="number" />
+              <div className="flex gap-2">
+                <button onClick={handleCreate} disabled={creating}
+                  className="flex-1 h-8 rounded-lg bg-primary text-primary-foreground font-semibold text-xs flex items-center justify-center gap-1.5 disabled:opacity-60">
+                  {creating ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Save className="h-3 w-3" /> Criar</>}
+                </button>
+                <button onClick={() => setShowNew(false)} className="h-8 px-3 rounded-lg border border-border text-xs text-muted-foreground">Cancelar</button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="max-w-md mx-auto px-4 py-4">
         {loading ? (
@@ -100,6 +160,10 @@ const AdminStreaming = () => {
                     <button onClick={() => editingId === env.id ? cancelEdit() : startEdit(env)}
                       className="h-6 w-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                       {editingId === env.id ? <X className="h-3 w-3" /> : <Pencil className="h-3 w-3" />}
+                    </button>
+                    <button onClick={() => handleDelete(env)} disabled={saving === env.id}
+                      className="h-6 w-6 rounded flex items-center justify-center text-destructive/60 hover:text-destructive hover:bg-destructive/10 transition-colors">
+                      <Trash2 className="h-3 w-3" />
                     </button>
                   </div>
                 </div>

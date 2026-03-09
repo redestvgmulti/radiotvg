@@ -190,7 +190,6 @@ const PerfilTab = () => {
           </div>
         </>
       )}
-      <PersistentPlayer />
     </motion.div>
   );
 };

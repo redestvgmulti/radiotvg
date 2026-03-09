@@ -149,7 +149,6 @@ const ProgramasTab = () => {
         </div>
       )}
 
-      <PersistentPlayer />
     </motion.div>
   );
 };

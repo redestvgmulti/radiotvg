@@ -17,7 +17,6 @@ export interface RadioState {
   volume: number;
   currentEnvironmentSlug: string;
   isLive: boolean;
-  isVideoActive: boolean;
   isBuffering: boolean;
   streamError: string | null;
   environments: StreamEnvironment[];
@@ -30,7 +29,6 @@ export interface RadioState {
   setPlaying: (playing: boolean) => void;
   setVolume: (volume: number) => void;
   setEnvironment: (slug: string) => void;
-  setVideoActive: (active: boolean) => void;
   setBuffering: (buffering: boolean) => void;
   setStreamError: (error: string | null) => void;
   togglePlay: () => void;
@@ -45,7 +43,6 @@ export const useRadioStore = create<RadioState>((set, get) => ({
   volume: 0.8,
   currentEnvironmentSlug: '',
   isLive: false,
-  isVideoActive: false,
   isBuffering: false,
   streamError: null,
   environments: [],
@@ -68,7 +65,6 @@ export const useRadioStore = create<RadioState>((set, get) => ({
       },
     });
   },
-  setVideoActive: (active) => set({ isVideoActive: active }),
   setBuffering: (buffering) => set({ isBuffering: buffering }),
   setStreamError: (error) => set({ streamError: error }),
   togglePlay: () => set((s) => ({ isPlaying: !s.isPlaying })),
@@ -93,20 +89,18 @@ export const useRadioStore = create<RadioState>((set, get) => ({
     });
   },
   loadLiveStatus: async () => {
-    // Fetch initial
     const { data } = await supabase
       .from('radio_settings')
       .select('value')
-      .eq('key', 'video_is_live')
+      .eq('key', 'is_live')
       .maybeSingle();
     set({ isLive: data?.value === 'true' });
 
-    // Subscribe to realtime changes
     supabase
       .channel('live-status')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'radio_settings', filter: 'key=eq.video_is_live' },
+        { event: '*', schema: 'public', table: 'radio_settings', filter: 'key=eq.is_live' },
         (payload) => {
           const newVal = (payload.new as { value?: string })?.value;
           set({ isLive: newVal === 'true' });

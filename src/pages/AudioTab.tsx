@@ -229,8 +229,6 @@ const AudioTab = () => {
         </section>
       )}
 
-      {/* ===== PERSISTENT PLAYER ===== */}
-      <PersistentPlayer />
     </motion.div>
   );
 };
