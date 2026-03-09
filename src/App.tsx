@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import BottomNav from "./components/BottomNav";
 import AudioEngine from "./components/AudioEngine";
 import PlaybackController from "./components/PlaybackController";
+import SignupPromoModal from "./components/SignupPromoModal";
 import ListeningTracker from "./components/ListeningTracker";
 import ErrorBoundary from "./components/ErrorBoundary";
 import AdminLayout from "./components/AdminLayout";
@@ -82,6 +83,7 @@ const App = () => (
         <BrowserRouter>
           <AudioEngine />
           <PlaybackController />
+          <SignupPromoModal />
           <ListeningTracker />
           <AppLayout />
         </BrowserRouter>
