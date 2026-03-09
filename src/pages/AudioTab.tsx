@@ -71,8 +71,6 @@ const AudioTab = () => {
 
   const exploreItems = [
     { icon: Headphones, label: 'Música ao Vivo', path: '/', color: 'from-primary/30 to-primary/10' },
-    { icon: Tv, label: 'TV ao Vivo', path: '/video', color: 'from-accent/30 to-accent/10' },
-    { icon: Film, label: 'Vídeos', path: '/video', color: 'from-env-poprock/30 to-env-poprock/10' },
     { icon: Calendar, label: 'Programação', path: '/programas', color: 'from-env-sertanejo/30 to-env-sertanejo/10' },
     { icon: Mic, label: 'Locutores', path: '/programas', color: 'from-env-gospel/30 to-env-gospel/10' },
   ];
