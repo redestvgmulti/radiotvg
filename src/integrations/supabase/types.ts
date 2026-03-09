@@ -249,42 +249,6 @@ export type Database = {
         }
         Relationships: []
       }
-      sponsors: {
-        Row: {
-          created_at: string
-          display_time: number
-          id: string
-          image_url: string
-          is_active: boolean
-          link_url: string
-          name: string
-          sort_order: number
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          display_time?: number
-          id?: string
-          image_url?: string
-          is_active?: boolean
-          link_url?: string
-          name: string
-          sort_order?: number
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          display_time?: number
-          id?: string
-          image_url?: string
-          is_active?: boolean
-          link_url?: string
-          name?: string
-          sort_order?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
       stream_environments: {
         Row: {
           created_at: string
@@ -356,6 +320,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      redeem_reward: {
+        Args: { _reward_id: string; _user_id: string }
+        Returns: Json
       }
     }
     Enums: {
