@@ -55,6 +55,11 @@ function loadYouTubeApi(): Promise<void> {
   });
 }
 
+// Diagnostic logger for background playback validation
+const logAudioState = (event: string, detail?: string) => {
+  console.log(`[AUDIO STATE] ${event}${detail ? ` — ${detail}` : ''} | ${new Date().toLocaleTimeString()}`);
+};
+
 /**
  * AudioEngine — persistent component mounted at App root.
  * Supports HLS streams (.m3u8) and YouTube URLs.
@@ -68,6 +73,7 @@ const AudioEngine = () => {
   const isPlayingRef = useRef(false);
   const activeSourceType = useRef<'hls' | 'youtube' | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  const hlsRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
     isPlaying, volume, getCurrentStreamUrl, getCurrentEnvironment,
@@ -79,6 +85,14 @@ const AudioEngine = () => {
   // Keep ref in sync
   useEffect(() => {
     isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
+
+  // MediaSession playbackState sync
+  useEffect(() => {
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+      logAudioState('playbackState', isPlaying ? 'playing' : 'paused');
+    }
   }, [isPlaying]);
 
   // Wake Lock — prevents screen/device sleep while playing
@@ -128,6 +142,27 @@ const AudioEngine = () => {
         audioRef.current.pause();
       }
       wakeLockRef.current?.release();
+      if (hlsRetryTimeoutRef.current) clearTimeout(hlsRetryTimeoutRef.current);
+    };
+  }, []);
+
+  // Diagnostic listeners for background playback validation
+  useEffect(() => {
+    const onVisibility = () => logAudioState('visibilitychange', document.visibilityState);
+    const onPageHide = () => logAudioState('pagehide');
+    const onFocus = () => logAudioState('focus');
+    const onBlur = () => logAudioState('blur');
+
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', onPageHide);
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('blur', onBlur);
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', onPageHide);
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('blur', onBlur);
     };
   }, []);
 
@@ -135,6 +170,10 @@ const AudioEngine = () => {
   const cleanupHls = useCallback(() => {
     hlsRef.current?.destroy();
     hlsRef.current = null;
+    if (hlsRetryTimeoutRef.current) {
+      clearTimeout(hlsRetryTimeoutRef.current);
+      hlsRetryTimeoutRef.current = null;
+    }
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.removeAttribute('src');
@@ -146,6 +185,56 @@ const AudioEngine = () => {
     ytPlayerRef.current?.destroy();
     ytPlayerRef.current = null;
   }, []);
+
+  // HLS initialization helper (extracted for retry logic)
+  const initHls = useCallback((url: string) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (Hls.isSupported()) {
+      const hls = new Hls({
+        enableWorker: true,
+        backBufferLength: 90,
+      });
+      hlsRef.current = hls;
+      hls.loadSource(url);
+      hls.attachMedia(audio);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        setBuffering(false);
+        logAudioState('HLS manifest parsed');
+        if (isPlayingRef.current) audio.play().catch(() => {});
+      });
+      hls.on(Hls.Events.ERROR, (_e, data) => {
+        if (data.fatal) {
+          if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+            logAudioState('HLS fatal error', 'NETWORK — retrying startLoad()');
+            setStreamError('Erro de conexão. Reconectando...');
+            hls.startLoad();
+          } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+            logAudioState('HLS fatal error', 'MEDIA — recovering');
+            setStreamError('Erro de mídia. Recuperando...');
+            hls.recoverMediaError();
+          } else {
+            // Other fatal errors — full retry after 10s
+            logAudioState('HLS fatal error', `OTHER (${data.details}) — will retry in 10s`);
+            setStreamError('Reconectando ao stream...');
+            hlsRetryTimeoutRef.current = setTimeout(() => {
+              logAudioState('HLS retry', 'reinitializing stream');
+              hls.destroy();
+              hlsRef.current = null;
+              initHls(url);
+            }, 10000);
+          }
+          setTimeout(() => setStreamError(null), 4000);
+        }
+      });
+    } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
+      // Safari native HLS
+      audio.src = url;
+      setBuffering(false);
+      if (isPlayingRef.current) audio.play().catch(() => {});
+    }
+  }, [setBuffering, setStreamError]);
 
   // Source management — react to stream URL changes
   const streamUrl = getCurrentStreamUrl();
@@ -240,52 +329,26 @@ const AudioEngine = () => {
 
     // HLS path
     activeSourceType.current = 'hls';
+    initHls(streamUrl);
+
     const audio = audioRef.current;
     if (!audio) return;
 
-    if (Hls.isSupported()) {
-      const hls = new Hls({
-        enableWorker: true,
-        // Keep loading in background to prevent stalls
-        backBufferLength: 90,
-      });
-      hlsRef.current = hls;
-      hls.loadSource(streamUrl);
-      hls.attachMedia(audio);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        setBuffering(false);
-        if (isPlayingRef.current) audio.play().catch(() => {});
-      });
-      hls.on(Hls.Events.ERROR, (_e, data) => {
-        if (data.fatal) {
-          if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-            setStreamError('Erro de conexão. Reconectando...');
-            hls.startLoad();
-          } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-            setStreamError('Erro de mídia. Recuperando...');
-            hls.recoverMediaError();
-          } else {
-            setStreamError('Stream indisponível');
-          }
-          setTimeout(() => setStreamError(null), 4000);
-        }
-      });
-    } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
-      // Safari native HLS
-      audio.src = streamUrl;
-      setBuffering(false);
-      if (isPlayingRef.current) audio.play().catch(() => {});
-    }
-
-    const onWaiting = () => setBuffering(true);
-    const onPlaying = () => { setBuffering(false); setStreamError(null); };
+    const onWaiting = () => { setBuffering(true); logAudioState('audio waiting'); };
+    const onPlaying = () => { setBuffering(false); setStreamError(null); logAudioState('audio playing'); };
+    const onPause = () => logAudioState('audio pause');
+    const onStalled = () => logAudioState('audio stalled');
     audio.addEventListener('waiting', onWaiting);
     audio.addEventListener('playing', onPlaying);
+    audio.addEventListener('pause', onPause);
+    audio.addEventListener('stalled', onStalled);
 
     return () => {
       cleanupHls();
       audio.removeEventListener('waiting', onWaiting);
       audio.removeEventListener('playing', onPlaying);
+      audio.removeEventListener('pause', onPause);
+      audio.removeEventListener('stalled', onStalled);
     };
   }, [streamUrl]);
 
@@ -312,9 +375,10 @@ const AudioEngine = () => {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && isPlayingRef.current) {
+        logAudioState('visibility resume', 'checking if audio needs restart');
         if (activeSourceType.current === 'hls' && audioRef.current) {
-          // Check if audio was paused by the browser
           if (audioRef.current.paused) {
+            logAudioState('visibility resume', 'audio was paused — restarting');
             audioRef.current.play().catch(() => {});
           }
         } else if (activeSourceType.current === 'youtube' && ytPlayerRef.current) {
