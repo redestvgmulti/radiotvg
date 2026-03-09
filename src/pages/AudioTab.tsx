@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Pause, Headphones, Tv, Film, Calendar, Mic, MessageCircle, ChevronRight, Clock, ExternalLink } from 'lucide-react';
+import { Play, Pause, Headphones, Calendar, Mic, MessageCircle, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import LiveBadge from '@/components/LiveBadge';
 import EnvironmentSelector from '@/components/EnvironmentSelector';
