@@ -4,8 +4,8 @@ import { motion } from 'framer-motion';
 
 const tabs = [
   { path: '/', label: 'Rádio', icon: Radio },
-  { path: '/programas', label: 'Programas', icon: LayoutGrid },
-  { path: '/rewards', label: 'Rewards', icon: Gift },
+  { path: '/programas', label: 'Programação', icon: LayoutGrid },
+  { path: '/premios', label: 'Prêmios', icon: Gift },
   { path: '/perfil', label: 'Perfil', icon: User },
 ];
 
