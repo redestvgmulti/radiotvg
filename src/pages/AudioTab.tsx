@@ -163,11 +163,11 @@ const AudioTab = () => {
         </div>
       </section>
 
-      {/* ===== AMBIENTES / STATION SELECTOR ===== */}
-      <section className="px-4 mt-6">
+      {/* ===== AMBIENTES / STATION SELECTOR (oculto — canal único por enquanto) ===== */}
+      {/* <section className="px-4 mt-6">
         <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] mb-3 px-1">Estações</h2>
         <EnvironmentSelector />
-      </section>
+      </section> */}
 
       {/* ===== ANÚNCIOS ===== */}
       <section className="px-4 mt-6">
