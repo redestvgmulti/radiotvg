@@ -15,7 +15,7 @@ import envRaiz from '@/assets/env-raiz.jpg';
 import envGospel from '@/assets/env-gospel.jpg';
 
 const localImageMap: Record<string, string> = {
-  sertanejo: envSertanejo, poprock: envPoprock, raiz: envRaiz, gospel: envGospel,
+  aovivo: envSertanejo, sertanejo: envSertanejo, poprock: envPoprock, raiz: envRaiz, gospel: envGospel,
 };
 
 const DAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
@@ -34,7 +34,7 @@ const AudioTab = () => {
 
   const env = getCurrentEnvironment();
   const streamUrl = getCurrentStreamUrl();
-  const imgSrc = env?.image_url || localImageMap[env?.slug || 'sertanejo'] || localImageMap.sertanejo;
+  const imgSrc = env?.image_url || localImageMap[env?.slug || 'aovivo'] || localImageMap.aovivo;
   const navigate = useNavigate();
 
   const [programs, setPrograms] = useState<Program[]>([]);
