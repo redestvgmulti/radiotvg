@@ -18,7 +18,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { navigate('/admin/login'); return; }
+      if (!session) { navigate('/admin'); return; }
 
       const { data: roles } = await supabase
         .from('user_roles')
