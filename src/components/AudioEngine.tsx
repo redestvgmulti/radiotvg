@@ -371,11 +371,11 @@ const AudioEngine = () => {
     }
 
     // Determine if this is an HLS stream or a direct audio stream (Icecast/SHOUTcast)
-    const isHlsStream = streamUrl.includes('.m3u8');
+    const isHlsStream = sanitizedUrl.includes('.m3u8');
     activeSourceType.current = 'hls'; // reuse same path for both
 
     if (isHlsStream) {
-      initHls(streamUrl);
+      initHls(sanitizedUrl);
     } else {
       // Direct audio stream (Icecast/SHOUTcast MP3/AAC) — just set src
       const audio = audioRef.current;
