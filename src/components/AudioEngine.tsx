@@ -293,7 +293,7 @@ const AudioEngine = () => {
 
     if (isYouTubeUrl(sanitizedUrl)) {
       activeSourceType.current = 'youtube';
-      const videoId = extractYouTubeId(streamUrl);
+      const videoId = extractYouTubeId(sanitizedUrl);
       if (!videoId) {
         setStreamError('Link do YouTube inválido');
         setBuffering(false);
