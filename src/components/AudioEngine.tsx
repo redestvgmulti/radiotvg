@@ -282,15 +282,18 @@ const AudioEngine = () => {
   useEffect(() => {
     if (!streamUrl) return;
 
+    // Sanitize legacy SHOUTcast suffixes (e.g. ",1") that break HTML5 audio
+    const sanitizedUrl = streamUrl.replace(/,\d+$/, '/');
+
     // Cleanup previous source
     cleanupHls();
     cleanupYt();
     setBuffering(true);
     setStreamError(null);
 
-    if (isYouTubeUrl(streamUrl)) {
+    if (isYouTubeUrl(sanitizedUrl)) {
       activeSourceType.current = 'youtube';
-      const videoId = extractYouTubeId(streamUrl);
+      const videoId = extractYouTubeId(sanitizedUrl);
       if (!videoId) {
         setStreamError('Link do YouTube inválido');
         setBuffering(false);
@@ -368,19 +371,19 @@ const AudioEngine = () => {
     }
 
     // Determine if this is an HLS stream or a direct audio stream (Icecast/SHOUTcast)
-    const isHlsStream = streamUrl.includes('.m3u8');
+    const isHlsStream = sanitizedUrl.includes('.m3u8');
     activeSourceType.current = 'hls'; // reuse same path for both
 
     if (isHlsStream) {
-      initHls(streamUrl);
+      initHls(sanitizedUrl);
     } else {
       // Direct audio stream (Icecast/SHOUTcast MP3/AAC) — just set src
       const audio = audioRef.current;
       if (audio) {
-        audio.src = streamUrl;
+        audio.src = sanitizedUrl;
         setBuffering(false);
         if (isPlayingRef.current) audio.play().catch(() => {});
-        logAudioState('Direct stream loaded', streamUrl);
+        logAudioState('Direct stream loaded', sanitizedUrl);
 
         // Error recovery for direct streams
         const onDirectError = () => {
@@ -388,7 +391,7 @@ const AudioEngine = () => {
           setStreamError('Reconectando ao stream...');
           hlsRetryTimeoutRef.current = setTimeout(() => {
             logAudioState('Direct stream retry', 'reassigning source');
-            audio.src = streamUrl;
+            audio.src = sanitizedUrl;
             setStreamError(null);
             if (isPlayingRef.current) audio.play().catch(() => {});
           }, 10000);
