@@ -120,6 +120,7 @@ export const useRadioStore = create<RadioState>((set, get) => ({
 
 // Legacy compat — color mapping by slug
 const envColorMap: Record<string, string> = {
+  aovivo: '--env-sertanejo',
   sertanejo: '--env-sertanejo',
   poprock: '--env-poprock',
   raiz: '--env-raiz',

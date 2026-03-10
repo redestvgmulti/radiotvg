@@ -34,7 +34,7 @@ const AudioTab = () => {
 
   const env = getCurrentEnvironment();
   const streamUrl = getCurrentStreamUrl();
-  const imgSrc = env?.image_url || localImageMap[env?.slug || 'sertanejo'] || localImageMap.sertanejo;
+  const imgSrc = env?.image_url || localImageMap[env?.slug || 'aovivo'] || localImageMap.aovivo;
   const navigate = useNavigate();
 
   const [programs, setPrograms] = useState<Program[]>([]);
