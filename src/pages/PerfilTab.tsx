@@ -154,9 +154,9 @@ const PerfilTab = () => {
               {/* Avatar with upload */}
               <div className="relative mb-3">
                 {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} alt="" className="w-18 h-18 rounded-full border-2 border-white/30 object-cover" />
+                  <img src={profile.avatar_url} alt="" className="w-20 h-20 rounded-full border-[3px] border-white/30 object-cover" style={{ width: 80, height: 80 }} />
                 ) : (
-                  <div className="w-18 h-18 rounded-full bg-primary/20 backdrop-blur-xl border border-primary/30 flex items-center justify-center">
+                  <div className="rounded-full bg-primary/20 backdrop-blur-xl border-[3px] border-primary/30 flex items-center justify-center" style={{ width: 80, height: 80 }}>
                     <User className="h-8 w-8 text-primary" />
                   </div>
                 )}
