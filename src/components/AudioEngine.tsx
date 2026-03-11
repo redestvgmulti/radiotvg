@@ -83,6 +83,9 @@ const AudioEngine = () => {
     environments, setBuffering, setStreamError,
   } = useRadioStore();
 
+  // Poll ICY metadata from SHOUTcast/Icecast stream
+  useStreamMetadata();
+
   // Keep ref in sync
   useEffect(() => {
     isPlayingRef.current = isPlaying;
