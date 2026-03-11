@@ -189,6 +189,7 @@ export type Database = {
       }
       redemptions: {
         Row: {
+          coupon_code: string | null
           id: string
           points_spent: number
           redeemed_at: string
@@ -196,6 +197,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          coupon_code?: string | null
           id?: string
           points_spent?: number
           redeemed_at?: string
@@ -203,6 +205,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          coupon_code?: string | null
           id?: string
           points_spent?: number
           redeemed_at?: string
@@ -314,6 +317,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_coupon_export: {
+        Args: never
+        Returns: {
+          coupon_code: string
+          display_name: string
+          email: string
+          redeemed_at: string
+          reward_name: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
