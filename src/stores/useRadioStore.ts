@@ -36,6 +36,7 @@ export interface RadioState {
   loadLiveStatus: () => Promise<void>;
   getCurrentEnvironment: () => StreamEnvironment | undefined;
   getCurrentStreamUrl: () => string;
+  setCurrentTrack: (track: { title: string; artist: string; album: string }) => void;
 }
 
 export const useRadioStore = create<RadioState>((set, get) => ({
