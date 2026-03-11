@@ -36,6 +36,7 @@ export interface RadioState {
   loadLiveStatus: () => Promise<void>;
   getCurrentEnvironment: () => StreamEnvironment | undefined;
   getCurrentStreamUrl: () => string;
+  setCurrentTrack: (track: { title: string; artist: string; album: string }) => void;
 }
 
 export const useRadioStore = create<RadioState>((set, get) => ({
@@ -68,6 +69,7 @@ export const useRadioStore = create<RadioState>((set, get) => ({
   setBuffering: (buffering) => set({ isBuffering: buffering }),
   setStreamError: (error) => set({ streamError: error }),
   togglePlay: () => set((s) => ({ isPlaying: !s.isPlaying })),
+  setCurrentTrack: (track) => set({ currentTrack: track }),
   loadEnvironments: async () => {
     const { data } = await supabase
       .from('stream_environments')
@@ -125,7 +127,7 @@ const envColorMap: Record<string, string> = {
   poprock: '--env-poprock',
   raiz: '--env-raiz',
   gospel: '--env-gospel',
-};
+  };
 
 export const getEnvColorVar = (slug: string): string => {
   return envColorMap[slug] || '--env-sertanejo';
