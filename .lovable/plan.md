@@ -1,219 +1,157 @@
 
-# Rádio TVG -- Senior Engineering Refactor Plan
 
-This is a structural architecture refactor across 8 phases to transform the current app into a scalable, Spotify-grade streaming architecture.
+# RadioTVG — Corrected Implementation Plan
 
----
+## Audit Results
 
-## Phase 1 -- Core Playback Architecture (CRITICAL)
-
-**Problem**: Audio lives inside `HeroPlayer.tsx`, which unmounts on tab navigation. Playback stops when the user switches tabs.
-
-**Solution**: Extract audio logic into a persistent `AudioEngine` component mounted at the `App.tsx` root, outside of `<Routes>`. `HeroPlayer` becomes UI-only.
-
-### New files
-- `src/components/AudioEngine.tsx` -- Persistent component (renders nothing visible). Owns the `<audio>` element and HLS instance. Subscribes to `useRadioStore` for `streamUrl`, `isPlaying`, `volume`, `currentEnvironmentSlug`. Handles:
-  - HLS instance creation/destruction on environment switch
-  - Play/pause sync via store subscription
-  - Volume sync
-  - Uses refs for `isPlaying` to avoid stale closures in HLS callbacks
-- `src/components/PlaybackController.tsx` -- Coordinates audio vs video. Rules:
-  - When video player opens, pause audio (store `wasPlaying` flag)
-  - When video closes, resume audio if `wasPlaying`
-  - Reads a new `isVideoActive` flag from a new `usePlaybackStore` or added to `useRadioStore`
-
-### Modified files
-- `src/stores/useRadioStore.ts` -- Add `isVideoActive`, `setVideoActive(bool)`, and `previouslyPlaying` state
-- `src/App.tsx` -- Mount `<AudioEngine />` and `<PlaybackController />` before `<AppLayout />`
-- `src/components/HeroPlayer.tsx` -- Remove all audio/HLS logic. Remove `audioRef`, `hlsRef`, and all `useEffect` hooks related to audio. Keep only: image, visualizer bars, track info, play/pause/volume controls (which call store actions)
-- `src/pages/VideoTab.tsx` -- Call `setVideoActive(true)` when opening video player, `setVideoActive(false)` on close
+- **AudioEngine**: Mounted at App root, supports HLS/YouTube/direct streams with full error recovery. No changes needed.
+- **Ads table**: Structure confirmed — has `id`, `name`, `media_url`, `media_type`, `link_url`, `display_duration`, `station_ids`, `is_active`, `sort_order`.
+- **`redeem_reward` function**: Exists, deducts points and inserts into `redemptions`. Needs coupon_code generation added.
+- **`radio_settings`**: Used for `is_live` with realtime subscription. Ready for `whatsapp_number`.
+- **Legacy cleanup (SponsorCarousel, sponsors, video_is_live)**: Already clean — no references found.
+- **LiveBadge**: Imported in `AudioTab.tsx` (line 5) and `PersistentPlayer.tsx` (line 4), but **not actually used** in either component's JSX. Both use inline badge markup instead. Safe to remove imports.
 
 ---
 
-## Phase 2 -- Live State Fix
+## Phase 1 — Database Migrations
 
-**Problem**: `isLive: true` is hardcoded in the store. `LiveBadge` always shows.
+### 1A. Create `avatars` storage bucket
+Create bucket `avatars` (public). Storage policies on `storage.objects`:
+- **Upload**: authenticated, `bucket_id = 'avatars'` AND `auth.uid()::text = (storage.foldername(name))[1]`
+- **Public read**: `bucket_id = 'avatars'`
 
-**Solution**: Fetch `isLive` from `radio_settings` table (key: `video_is_live`) and subscribe to realtime changes.
+### 1B. Insert `whatsapp_number` setting
+Insert into `radio_settings`: `key='whatsapp_number', value='559999999999', label='WhatsApp', category='contato'`
 
-### Modified files
-- `src/stores/useRadioStore.ts` -- Change `isLive` default to `false`. Add `loadLiveStatus()` that fetches from `radio_settings` where `key = 'video_is_live'`. Add realtime subscription to `radio_settings` table for live updates.
-- `src/components/AudioEngine.tsx` -- Call `loadLiveStatus()` on mount
-- Database migration: Enable realtime on `radio_settings` table (`ALTER PUBLICATION supabase_realtime ADD TABLE public.radio_settings;`)
-
----
-
-## Phase 3 -- Admin Architecture
-
-**Problem**: Every admin page independently checks auth in `useEffect`. Content flashes before redirect. Duplicated header/back-button patterns.
-
-**Solution**: Create `AdminLayout` wrapper component.
-
-### New files
-- `src/components/AdminLayout.tsx` -- Shared layout wrapper for all admin routes. Responsibilities:
-  - Check session + admin role on mount
-  - Show loading spinner while checking
-  - Redirect to `/admin/login` if unauthorized
-  - Render shared admin header with user email and logout
-  - Accept `title`, `subtitle`, `headerActions` props
-  - Force light theme via `document.documentElement.classList.remove('dark')` on mount
-
-### Modified files
-- `src/App.tsx` -- Wrap admin routes (except `/admin/login`) with `<AdminLayout>`
-- `src/pages/AdminDashboard.tsx` -- Remove auth check `useEffect`, remove header/logout. Use `AdminLayout`
-- `src/pages/AdminStreaming.tsx` -- Remove auth check pattern, use `AdminLayout`
-- `src/pages/AdminVideo.tsx` -- Same cleanup
-- `src/pages/AdminSponsors.tsx` -- Same cleanup
-- `src/pages/AdminPrograms.tsx` -- Same cleanup
-- `src/pages/AdminUsers.tsx` -- Same cleanup
-- `src/pages/AdminStats.tsx` -- Same cleanup
-- `src/pages/AdminConfig.tsx` -- Same cleanup
-
----
-
-## Phase 4 -- Media Session API
-
-**Problem**: No lock screen controls or background playback metadata on mobile.
-
-**Solution**: Integrate Media Session API into `AudioEngine`.
-
-### Modified files
-- `src/components/AudioEngine.tsx` -- Add Media Session integration:
-  - Set `navigator.mediaSession.metadata` with title, artist, album, artwork (from environment image)
-  - Set action handlers: `play`, `pause`, `previoustrack` (prev environment), `nexttrack` (next environment)
-  - Update metadata on environment change
-
----
-
-## Phase 5 -- Cleanup
-
-### Delete files
-- `src/components/AudioPlayerCard.tsx` -- Duplicate of HeroPlayer, imported nowhere
-- `src/pages/Index.tsx` -- Lovable placeholder, route points to `AudioTab` instead
-- `src/components/NavLink.tsx` -- Imported nowhere
-
-### Modified files
-- `src/index.css` -- Remove duplicate font imports (lines 7-11). Keep single import on line 5 and add Lora + Space Mono to it
-- `src/index.css` -- Remove entire `.dark` block (lines 85-126). This app is light-only. This eliminates the dark theme problem at the root
-- `src/App.tsx` -- Remove the `useEffect` hack that removes `.dark` class (no longer needed once CSS block is removed)
-- `tailwind.config.ts` -- Remove `darkMode: ["class"]` line since we are light-only
-
----
-
-## Phase 6 -- Data Integration
-
-**Problem**: `ProgramasTab` uses hardcoded mock data. Video library is hardcoded with test Mux URLs.
-
-### Modified files
-- `src/pages/ProgramasTab.tsx` -- Replace `mockPrograms` with real query to `programs` table. Determine "now playing" by comparing current day/time against `day_of_week`, `start_time`, `end_time`. Group by day for display. Show loading skeleton while fetching.
-- `src/pages/VideoTab.tsx` -- This requires a new `videos` table for the library. For now, keep hardcoded but add a TODO comment. The live stream section already reads from DB which is correct.
-
-### Database migration
-- Create `videos` table: `id`, `title`, `thumbnail_url`, `hls_url`, `duration`, `views_count`, `is_active`, `sort_order`, `created_at`
-- Add RLS: public read for active videos, admin full access
-
----
-
-## Phase 7 -- Performance
-
-### Modified files
-- `src/App.tsx` -- Wrap admin page imports with `React.lazy()` and `<Suspense>`:
-  ```
-  const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
-  const AdminStreaming = lazy(() => import('./pages/AdminStreaming'));
-  // ... etc
-  ```
-  Add `<Suspense fallback={<LoadingSpinner />}>` around admin routes
-
-### New files
-- `src/components/ErrorBoundary.tsx` -- Generic error boundary wrapping main app sections. Shows friendly error message with reload button instead of white screen.
-
-### Modified files
-- `src/App.tsx` -- Wrap `<AppLayout>` with `<ErrorBoundary>`
-
----
-
-## Phase 8 -- Media Logic Improvements
-
-### Modified files
-- `src/components/AudioEngine.tsx` -- Use `useRef` for `isPlaying` to avoid stale closures in HLS `MANIFEST_PARSED` callback. Pattern:
-  ```typescript
-  const isPlayingRef = useRef(isPlaying);
-  useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
-  // In HLS callback: if (isPlayingRef.current) audio.play()
-  ```
-- `src/components/VideoPlayer.tsx` -- Add autoplay muted fallback:
-  ```typescript
-  video.play().catch(() => {
-    video.muted = true;
-    video.play().then(() => setPlaying(true));
-    setMuted(true);
-  });
-  ```
-
----
-
-## Architecture Overview (After Refactor)
-
-```text
-App.tsx
-+-- ErrorBoundary
-+-- AudioEngine (persistent, never unmounts)
-+-- PlaybackController (coordinates audio/video)
-+-- AppLayout
-    +-- Public Routes (max-w-lg, BottomNav)
-    |   +-- AudioTab -> HeroPlayer (UI only)
-    |   +-- VideoTab -> VideoPlayer
-    |   +-- ProgramasTab (DB-driven)
-    |   +-- PerfilTab
-    |   +-- ConfigTab
-    +-- Admin Routes (lazy loaded, wrapped in AdminLayout)
-        +-- AdminLogin (no layout wrapper)
-        +-- AdminLayout (auth guard + shared header)
-            +-- AdminDashboard
-            +-- AdminStreaming
-            +-- AdminVideo
-            +-- AdminSponsors
-            +-- AdminPrograms
-            +-- AdminUsers
-            +-- AdminStats
-            +-- AdminConfig
+### 1C. Add `coupon_code` to redemptions
+```sql
+ALTER TABLE redemptions ADD COLUMN coupon_code text;
 ```
+
+### 1D. Update `redeem_reward` function
+Add coupon generation using random hash format:
+```sql
+coupon_code := 'TVG-' || to_char(now(),'YYYY') || '-' || upper(substr(md5(random()::text),1,4));
+```
+Insert `coupon_code` into the redemptions row.
+
+### 1E. Create `get_coupon_export()` function
+```sql
+CREATE FUNCTION get_coupon_export()
+RETURNS TABLE(display_name text, email varchar, reward_name text, coupon_code text, redeemed_at timestamptz)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$
+  SELECT p.display_name, u.email, r.name, rd.coupon_code, rd.redeemed_at
+  FROM redemptions rd
+  JOIN profiles p ON p.user_id = rd.user_id
+  JOIN rewards r ON r.id = rd.reward_id
+  JOIN auth.users u ON u.id = rd.user_id
+  ORDER BY rd.redeemed_at DESC;
+$$;
+```
+
+---
+
+## Phase 2 — UI Components
+
+### 2A. AppHeader (`src/components/AppHeader.tsx`)
+- Sticky, 64px, dark blur background
+- Left: Radio TVG logo
+- Right: WhatsApp button (fetches `whatsapp_number` from `radio_settings` dynamically)
+- Rendered in `AppLayout` on all public routes
+
+### 2B. Remove PersistentPlayer
+- Remove `<PersistentPlayer />` from `App.tsx`
+- AudioEngine stays mounted at root — playback continues across pages
+- Player UI only exists in AudioTab hero section
+
+### 2C. Profile Photo Upload (PerfilTab)
+- Add camera overlay on avatar
+- File picker: jpg/png/webp, max 2MB
+- Upload path: `avatars/{user_id}/avatar.webp`
+- Update `profiles.avatar_url`
+
+### 2D. Shared ads hook (`src/hooks/useAdsRotation.ts`)
+Extract rotation logic from `AdDisplay` into a shared hook:
+```ts
+useAdsRotation(stationId?: string) → { currentAd, allAds }
+```
+Both `AdDisplay` and `AdFrame` consume this hook.
+
+### 2E. AdFrame component (`src/components/AdFrame.tsx`)
+- 16:9 aspect ratio via `aspect-ratio: 16/9`
+- Uses `useAdsRotation` hook
+- Placed below radio player in AudioTab
+
+### 2F. Three ad positions in AudioTab
+1. **AdFrame** (16:9) — below hero/player
+2. **AdDisplay** (mid-content) — between "Ao Vivo Agora" and "Próximos"
+3. **Optional footer banner** — above bottom nav, only if ads available
+
+### 2G. Reward info card
+Add to both `PerfilTab` and `RewardsTab`:
+> "A cada 60 minutos ouvindo a rádio você ganha 10 pontos."
+
+### 2H. Export Coupons button (AdminRewards)
+- Add "Exportar Cupons" button
+- Calls `supabase.rpc('get_coupon_export')`
+- Converts to CSV client-side
+- Downloads as `cupons_resgatados.csv`
+
+---
+
+## Phase 3 — PWA & Push
+
+### 3A. PWA Manifest (`public/manifest.json`)
+- `display: standalone`, `background_color: #0B0F19`, `theme_color: #0B0F19`
+- Icons: 192x192 and 512x512
+- Add `<link rel="manifest">` and `<meta name="theme-color">` to `index.html`
+
+### 3B. InstallAppPrompt (`src/components/InstallAppPrompt.tsx`)
+- Listen for `beforeinstallprompt`
+- Modal: "Instalar aplicativo Rádio TVG" with "Instalar" / "Agora não"
+- Store dismissal in `localStorage`
+
+### 3C. OneSignal (`src/lib/onesignal.ts`)
+- Guard: `if (typeof window !== "undefined")`
+- Singleton initialization (flag to prevent double-init)
+- Add SDK script to `index.html`
+- Permission prompt logic: track continuous listening duration via `useRadioStore.isPlaying`, start timer on play, reset on pause, prompt after 30 seconds continuous
+- **Needs `ONESIGNAL_APP_ID`** — will set up structure first, add ID later
+
+---
+
+## Phase 4 — Cleanup
+
+- Remove unused `LiveBadge` import from `AudioTab.tsx` (line 5) and `PersistentPlayer.tsx` (line 4)
+- Remove hardcoded WhatsApp link from `AudioTab.tsx` (line 157) — replaced by AppHeader dynamic button
+- SponsorCarousel/sponsors/video_is_live: already clean, no action needed
+
+---
 
 ## Files Summary
 
-| Action | File |
-|--------|------|
-| CREATE | `src/components/AudioEngine.tsx` |
-| CREATE | `src/components/PlaybackController.tsx` |
-| CREATE | `src/components/AdminLayout.tsx` |
-| CREATE | `src/components/ErrorBoundary.tsx` |
-| MODIFY | `src/stores/useRadioStore.ts` |
-| MODIFY | `src/App.tsx` |
-| MODIFY | `src/components/HeroPlayer.tsx` |
-| MODIFY | `src/components/VideoPlayer.tsx` |
-| MODIFY | `src/pages/VideoTab.tsx` |
-| MODIFY | `src/pages/ProgramasTab.tsx` |
-| MODIFY | `src/pages/AdminDashboard.tsx` |
-| MODIFY | `src/pages/AdminStreaming.tsx` |
-| MODIFY | `src/pages/AdminVideo.tsx` |
-| MODIFY | `src/pages/AdminSponsors.tsx` |
-| MODIFY | `src/pages/AdminPrograms.tsx` |
-| MODIFY | `src/pages/AdminUsers.tsx` |
-| MODIFY | `src/pages/AdminStats.tsx` |
-| MODIFY | `src/pages/AdminConfig.tsx` |
-| MODIFY | `src/index.css` |
-| MODIFY | `tailwind.config.ts` |
-| DELETE | `src/components/AudioPlayerCard.tsx` |
-| DELETE | `src/pages/Index.tsx` |
-| DELETE | `src/components/NavLink.tsx` |
-| MIGRATION | Enable realtime on `radio_settings` |
-| MIGRATION | Create `videos` table |
+**New files:**
+- `src/components/AppHeader.tsx`
+- `src/components/AdFrame.tsx`
+- `src/components/InstallAppPrompt.tsx`
+- `src/hooks/useAdsRotation.ts`
+- `src/lib/onesignal.ts`
+- `public/manifest.json`
 
-## Risk Notes
+**Modified files:**
+- `src/App.tsx` — add AppHeader, remove PersistentPlayer, add InstallAppPrompt
+- `src/pages/AudioTab.tsx` — add AdFrame, remove hardcoded WhatsApp, remove LiveBadge import, add ad positions
+- `src/pages/PerfilTab.tsx` — add avatar upload, add points info card
+- `src/pages/RewardsTab.tsx` — add points info card
+- `src/pages/AdminRewards.tsx` — add export coupons button
+- `src/components/AdDisplay.tsx` — refactor to use `useAdsRotation` hook
+- `index.html` — add manifest link, theme-color meta, OneSignal script
 
-1. **Realtime subscription** on `radio_settings` requires the table to be added to `supabase_realtime` publication. This is a one-time migration.
-2. **Media Session API** has limited support on some Android WebViews. The implementation is additive (progressive enhancement) so it won't break anything.
-3. **Removing `.dark` CSS entirely** means if dark mode is ever needed later, it must be re-added. Given the project spec is light-only, this is acceptable.
-4. **Lazy loading admin routes** means the first navigation to an admin page will show a brief loading state. This is standard and acceptable.
-5. **The `videos` table migration** creates the schema but `VideoTab` will initially still use hardcoded data until a future admin UI is built for video library management.
+**Database migrations:**
+- Create `avatars` bucket + storage.objects policies
+- Insert `whatsapp_number` setting
+- Add `coupon_code` column to redemptions
+- Update `redeem_reward` function with coupon generation
+- Create `get_coupon_export` security definer function
+
