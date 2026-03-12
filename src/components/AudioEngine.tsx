@@ -480,8 +480,15 @@ const AudioEngine = () => {
       if (isPlaying) ytPlayerRef.current.playVideo();
       else ytPlayerRef.current.pauseVideo();
     } else if (activeSourceType.current === 'hls' && audioRef.current) {
-      if (isPlaying) audioRef.current.play().catch(() => {});
-      else audioRef.current.pause();
+      if (isPlaying) {
+        userInitiatedPauseRef.current = false;
+        audioRef.current.play().catch(() => {});
+      } else {
+        userInitiatedPauseRef.current = true;
+        audioRef.current.pause();
+        // Reset flag after pause event fires
+        setTimeout(() => { userInitiatedPauseRef.current = false; }, 100);
+      }
     }
   }, [isPlaying, streamUrl]);
 
