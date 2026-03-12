@@ -172,10 +172,6 @@ const AudioTab = () => {
         </div>
       </section>
 
-      {/* ===== AD FRAME 16:9 ===== */}
-      <section className="px-4 mt-6">
-        <AdFrame />
-      </section>
 
       {/* ===== NO AR AGORA ===== */}
       {nowPlaying && (
