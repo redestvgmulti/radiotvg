@@ -23,7 +23,7 @@ const AdDisplay = () => {
           transition={{ duration: 0.4 }}
         >
           <Wrapper {...wrapperProps} className="block relative">
-            {currentAd.media_type === 'video' ? (
+            {currentAd.media_type === 'video' && /\.(mp4|webm|ogg|mov)(\?|$)/i.test(currentAd.media_url) ? (
               <video
                 src={currentAd.media_url}
                 autoPlay
