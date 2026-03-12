@@ -162,9 +162,6 @@ const AdminAds = () => {
     toast({ title: 'Excluído' }); fetchAll(); setSaving(null);
   };
 
-  const toggleStation = (stationId: string, current: string[]) => {
-    return current.includes(stationId) ? current.filter(s => s !== stationId) : [...current, stationId];
-  };
 
   const getStationNames = (ids: string[]) => ids.map(id => stations.find(s => s.id === id)?.label || '?').join(', ');
 
