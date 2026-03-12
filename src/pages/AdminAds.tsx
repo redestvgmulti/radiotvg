@@ -261,7 +261,7 @@ const AdminAds = () => {
                   <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
                     <div className="px-4 pb-4 pt-3 space-y-3 border-t border-border">
                       <InputField label="Nome" value={editForm.name || ''} onChange={v => setEditForm({ ...editForm, name: v })} />
-                      <ImageUploadField mediaUrl={editForm.media_url || ''} onUrlChange={url => setEditForm({ ...editForm, media_url: url })} uploadKey={ad.id} />
+                      <ImageUploadField mediaUrl={editForm.media_url || ''} onUrlChange={url => setEditForm({ ...editForm, media_url: url })} uploadKey={ad.id} uploading={uploading} onUpload={uploadMedia} />
                       <div>
                         <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Tipo de Mídia</label>
                         <div className="flex gap-1.5">
