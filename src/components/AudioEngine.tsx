@@ -296,7 +296,7 @@ const AudioEngine = () => {
 
       // System interruption detection (phone calls, Siri) — stop playback
       const onInterruptPause = () => {
-        if (isPlayingRef.current) {
+        if (isPlayingRef.current && !userInitiatedPauseRef.current) {
           logAudioState('System interruption detected (native)', 'stopping playback');
           setPlaying(false);
         }
