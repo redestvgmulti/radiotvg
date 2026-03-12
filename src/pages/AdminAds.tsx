@@ -276,7 +276,7 @@ const AdminAds = () => {
                       <InputField label="Link (URL)" value={editForm.link_url || ''} onChange={v => setEditForm({ ...editForm, link_url: v })} placeholder="https://anunciante.com" type="url" />
                       <InputField label="Duração (segundos)" value={String(editForm.display_duration || 15)} onChange={v => setEditForm({ ...editForm, display_duration: Number(v) || 15 })} type="number" />
                       <InputField label="Ordem" value={String(editForm.sort_order || 0)} onChange={v => setEditForm({ ...editForm, sort_order: Number(v) || 0 })} type="number" />
-                      <StationSelector selected={editForm.station_ids || []} onChange={ids => setEditForm({ ...editForm, station_ids: ids })} />
+                      <StationSelector selected={editForm.station_ids || []} onChange={ids => setEditForm({ ...editForm, station_ids: ids })} stations={stations} />
                       <motion.button whileTap={{ scale: 0.98 }} onClick={saveEdit} disabled={saving === ad.id}
                         className="w-full h-10 rounded-xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-60">
                         {saving === ad.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-3.5 w-3.5" /> Salvar</>}
