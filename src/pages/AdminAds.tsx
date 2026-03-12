@@ -24,6 +24,63 @@ interface Station {
 
 const MEDIA_TYPES = ['image', 'video', 'banner'] as const;
 
+const MediaPreview = ({ url, type }: { url: string; type: string }) => {
+  if (!url) return <div className="h-10 w-14 rounded-lg bg-muted flex items-center justify-center"><ImageIcon className="h-4 w-4 text-muted-foreground/30" /></div>;
+  if (type === 'video') return <div className="h-10 w-14 rounded-lg bg-muted flex items-center justify-center"><Film className="h-4 w-4 text-muted-foreground/50" /></div>;
+  return <img src={url} alt="" className="h-10 w-14 rounded-lg object-cover border border-border" />;
+};
+
+const InputField = ({ label, value, onChange, placeholder, type = 'text' }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string }) => (
+  <div>
+    <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">{label}</label>
+    <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+      className="w-full h-9 px-3 rounded-xl bg-background border border-border text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/50" />
+  </div>
+);
+
+const ImageUploadField = ({ mediaUrl, onUrlChange, uploadKey, label = 'Mídia', uploading, onUpload }: { mediaUrl: string; onUrlChange: (url: string) => void; uploadKey: string; label?: string; uploading: string | null; onUpload: (file: File, key: string) => Promise<string | null> }) => {
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  return (
+    <div className="space-y-1.5">
+      <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block">{label}</label>
+      {mediaUrl ? (
+        <div className="relative inline-block">
+          <img src={mediaUrl} alt="" className="h-14 w-auto rounded-xl border border-border object-contain bg-muted/30" />
+          <button onClick={() => onUrlChange('')} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"><X className="h-2.5 w-2.5" /></button>
+        </div>
+      ) : (
+        <div className="h-14 w-24 rounded-xl border-2 border-dashed border-border flex items-center justify-center bg-muted/10"><ImageIcon className="h-4 w-4 text-muted-foreground/30" /></div>
+      )}
+      <input type="file" accept="image/*,video/*" ref={fileRef} className="hidden"
+        onChange={async (e) => { const file = e.target.files?.[0]; if (file) { const url = await onUpload(file, uploadKey); if (url) onUrlChange(url); } }} />
+      <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading === uploadKey}
+        className="h-8 px-3 rounded-xl bg-muted text-foreground text-[10px] font-semibold flex items-center gap-1 disabled:opacity-60 hover:bg-muted/80 transition-colors">
+        {uploading === uploadKey ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+        {uploading === uploadKey ? 'Enviando...' : 'Upload'}
+      </button>
+    </div>
+  );
+};
+
+const StationSelector = ({ selected, onChange, stations }: { selected: string[]; onChange: (ids: string[]) => void; stations: Station[] }) => {
+  const toggleStation = (stationId: string) => {
+    return selected.includes(stationId) ? selected.filter(s => s !== stationId) : [...selected, stationId];
+  };
+  return (
+    <div>
+      <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Estações</label>
+      <div className="flex flex-wrap gap-1.5">
+        {stations.map(s => (
+          <button key={s.id} type="button" onClick={() => onChange(toggleStation(s.id))}
+            className={`h-7 px-2.5 rounded-lg text-[10px] font-bold transition-colors ${selected.includes(s.id) ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}>
+            {s.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const AdminAds = () => {
   const [ads, setAds] = useState<Ad[]>([]);
   const [stations, setStations] = useState<Station[]>([]);
