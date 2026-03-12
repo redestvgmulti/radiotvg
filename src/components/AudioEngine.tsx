@@ -131,9 +131,16 @@ const AudioEngine = () => {
     };
   }, [isPlaying]);
 
-  // Load environments + live status on mount
+  // Load environments + live status on mount, then autoplay
   useEffect(() => {
-    if (!environmentsLoaded) loadEnvironments();
+    if (!environmentsLoaded) {
+      loadEnvironments().then(() => {
+        const url = useRadioStore.getState().getCurrentStreamUrl();
+        if (url) {
+          setPlaying(true);
+        }
+      });
+    }
     loadLiveStatus();
   }, []);
 
