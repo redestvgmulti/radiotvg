@@ -206,7 +206,7 @@ const AdminAds = () => {
                 </div>
                 <InputField label="Link (URL)" value={createForm.link_url} onChange={v => setCreateForm({ ...createForm, link_url: v })} placeholder="https://anunciante.com" type="url" />
                 <InputField label="Duração (segundos)" value={String(createForm.display_duration)} onChange={v => setCreateForm({ ...createForm, display_duration: Number(v) || 15 })} type="number" />
-                <StationSelector selected={createForm.station_ids} onChange={ids => setCreateForm({ ...createForm, station_ids: ids })} />
+                <StationSelector selected={createForm.station_ids} onChange={ids => setCreateForm({ ...createForm, station_ids: ids })} stations={stations} />
                 <motion.button whileTap={{ scale: 0.98 }} onClick={handleCreate} disabled={creating || !createForm.name}
                   className="w-full h-10 rounded-xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-60">
                   {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Criar Anúncio'}
