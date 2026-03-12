@@ -75,6 +75,7 @@ const AudioEngine = () => {
   const activeSourceType = useRef<'hls' | 'youtube' | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const hlsRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const userInitiatedPauseRef = useRef(false);
 
   const {
     isPlaying, volume, getCurrentStreamUrl, getCurrentEnvironment,
@@ -132,12 +133,42 @@ const AudioEngine = () => {
   }, [isPlaying]);
 
   // Load environments + live status on mount, then autoplay
+  const autoplayAttemptedRef = useRef(false);
+
   useEffect(() => {
     if (!environmentsLoaded) {
       loadEnvironments().then(() => {
         const url = useRadioStore.getState().getCurrentStreamUrl();
         if (url) {
           setPlaying(true);
+          // Try immediate autoplay; if blocked, wait for first user interaction
+          const tryAutoplay = () => {
+            const audio = audioRef.current;
+            if (!audio || autoplayAttemptedRef.current) return;
+            autoplayAttemptedRef.current = true;
+            
+            const playPromise = audio.play();
+            if (playPromise) {
+              playPromise.catch(() => {
+                logAudioState('Autoplay blocked', 'waiting for first user interaction');
+                const onFirstInteraction = () => {
+                  document.removeEventListener('click', onFirstInteraction, true);
+                  document.removeEventListener('touchstart', onFirstInteraction, true);
+                  if (!isPlayingRef.current) {
+                    setPlaying(true);
+                  }
+                  if (audioRef.current?.paused && isPlayingRef.current) {
+                    audioRef.current.play().catch(() => {});
+                  }
+                  logAudioState('First interaction', 'autoplay triggered');
+                };
+                document.addEventListener('click', onFirstInteraction, true);
+                document.addEventListener('touchstart', onFirstInteraction, true);
+              });
+            }
+          };
+          // Small delay to let the stream source initialize
+          setTimeout(tryAutoplay, 500);
         }
       });
     }
@@ -263,16 +294,11 @@ const AudioEngine = () => {
       };
       audio.addEventListener('error', onNativeError);
 
-      // iOS interruption recovery (phone calls, Siri)
+      // System interruption detection (phone calls, Siri) — stop playback
       const onInterruptPause = () => {
-        logAudioState('audio pause (native)', 'checking if should resume');
-        if (isPlayingRef.current) {
-          setTimeout(() => {
-            if (isPlayingRef.current && audio.paused) {
-              logAudioState('iOS interruption recovery', 'resuming playback');
-              audio.play().catch(() => {});
-            }
-          }, 1000);
+        if (isPlayingRef.current && !userInitiatedPauseRef.current) {
+          logAudioState('System interruption detected (native)', 'stopping playback');
+          setPlaying(false);
         }
       };
       audio.addEventListener('pause', onInterruptPause);
@@ -409,14 +435,11 @@ const AudioEngine = () => {
         };
         audio.addEventListener('error', onDirectError);
 
-        // iOS interruption recovery
+        // System interruption detection (phone calls) — stop playback
         const onDirectPause = () => {
-          if (isPlayingRef.current) {
-            setTimeout(() => {
-              if (isPlayingRef.current && audio.paused) {
-                audio.play().catch(() => {});
-              }
-            }, 1000);
+          if (isPlayingRef.current && !userInitiatedPauseRef.current) {
+            logAudioState('System interruption detected (direct)', 'stopping playback');
+            setPlaying(false);
           }
         };
         audio.addEventListener('pause', onDirectPause);
@@ -457,8 +480,15 @@ const AudioEngine = () => {
       if (isPlaying) ytPlayerRef.current.playVideo();
       else ytPlayerRef.current.pauseVideo();
     } else if (activeSourceType.current === 'hls' && audioRef.current) {
-      if (isPlaying) audioRef.current.play().catch(() => {});
-      else audioRef.current.pause();
+      if (isPlaying) {
+        userInitiatedPauseRef.current = false;
+        audioRef.current.play().catch(() => {});
+      } else {
+        userInitiatedPauseRef.current = true;
+        audioRef.current.pause();
+        // Reset flag after pause event fires
+        setTimeout(() => { userInitiatedPauseRef.current = false; }, 100);
+      }
     }
   }, [isPlaying, streamUrl]);
 
