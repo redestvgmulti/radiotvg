@@ -192,7 +192,7 @@ const AdminAds = () => {
               <div className="p-4 rounded-2xl bg-card border border-border space-y-3 mb-4">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Novo Anúncio</p>
                 <InputField label="Nome" value={createForm.name} onChange={v => setCreateForm({ ...createForm, name: v })} placeholder="Nome do anunciante" />
-                <ImageUploadField mediaUrl={createForm.media_url} onUrlChange={url => setCreateForm({ ...createForm, media_url: url })} uploadKey="new-ad" />
+                <ImageUploadField mediaUrl={createForm.media_url} onUrlChange={url => setCreateForm({ ...createForm, media_url: url })} uploadKey="new-ad" uploading={uploading} onUpload={uploadMedia} />
                 <div>
                   <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Tipo de Mídia</label>
                   <div className="flex gap-1.5">
