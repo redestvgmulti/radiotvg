@@ -92,7 +92,7 @@ const AdminAds = () => {
   const [createForm, setCreateForm] = useState({ name: '', media_url: '', media_type: 'image', link_url: '', display_duration: 15, station_ids: [] as string[] });
   const [creating, setCreating] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
-  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  
   const navigate = useNavigate();
   const { toast } = useToast();
 
