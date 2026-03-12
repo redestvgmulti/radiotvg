@@ -437,7 +437,7 @@ const AudioEngine = () => {
 
         // System interruption detection (phone calls) — stop playback
         const onDirectPause = () => {
-          if (isPlayingRef.current) {
+          if (isPlayingRef.current && !userInitiatedPauseRef.current) {
             logAudioState('System interruption detected (direct)', 'stopping playback');
             setPlaying(false);
           }
