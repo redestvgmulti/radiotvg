@@ -268,23 +268,22 @@ const AudioTab = () => {
               Instagram
             </h2>
           </div>
-          <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
+          <div className="flex gap-2.5 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide -mx-4 px-4">
             {instaPosts.map((post, i) => {
-              // Clean URL: remove query params and trailing slash, then add /embed/
               const cleanUrl = post.post_url.split('?')[0].replace(/\/+$/, '');
-              const embedUrl = `${cleanUrl}/embed/`;
+              const embedUrl = `${cleanUrl}/embed/captioned/`;
               return (
                 <motion.div
                   key={post.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.08 }}
-                  className="flex-shrink-0 w-[280px] snap-start rounded-xl overflow-hidden border border-border bg-card"
+                  className="flex-shrink-0 w-[240px] sm:w-[260px] snap-start rounded-xl overflow-hidden border border-border bg-card"
                 >
                   <iframe
                     src={embedUrl}
                     className="w-full border-0"
-                    style={{ minHeight: 380 }}
+                    style={{ height: 340 }}
                     scrolling="no"
                     allowTransparency
                     loading="lazy"
