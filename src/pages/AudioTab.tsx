@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Pause, Headphones, Calendar, ChevronRight, Volume2, VolumeX, MessageCircle, Instagram } from 'lucide-react';
+import { Play, Pause, Headphones, Calendar, ChevronRight, Volume2, VolumeX, MessageCircle, Instagram, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import EnvironmentSelector from '@/components/EnvironmentSelector';
 import AdDisplay from '@/components/AdDisplay';
@@ -40,7 +40,6 @@ const AudioTab = () => {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [whatsappNumber, setWhatsappNumber] = useState<string | null>(null);
   const [instaPosts, setInstaPosts] = useState<{ id: string; post_url: string }[]>([]);
-  const [instaLoaded, setInstaLoaded] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -55,23 +54,6 @@ const AudioTab = () => {
     };
     load();
   }, []);
-
-  // Load Instagram embed script
-  useEffect(() => {
-    if (instaPosts.length > 0 && !instaLoaded) {
-      const script = document.createElement('script');
-      script.src = 'https://www.instagram.com/embed.js';
-      script.async = true;
-      script.onload = () => {
-        setInstaLoaded(true);
-        (window as any).instgrm?.Embeds?.process();
-      };
-      document.body.appendChild(script);
-      return () => { document.body.removeChild(script); };
-    } else if (instaPosts.length > 0 && instaLoaded) {
-      setTimeout(() => (window as any).instgrm?.Embeds?.process(), 100);
-    }
-  }, [instaPosts, instaLoaded]);
 
   const now = new Date();
   const currentDay = now.getDay();
@@ -283,19 +265,37 @@ const AudioTab = () => {
               <Instagram className="h-3.5 w-3.5 text-white" />
             </div>
             <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em]">
-              Acompanhe a gente no Instagram
+              Instagram
             </h2>
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            {instaPosts.map((post) => (
-              <div key={post.id} className="rounded-xl overflow-hidden border border-border bg-card min-w-0">
-                <blockquote
-                  className="instagram-media"
-                  data-instgrm-captioned
-                  data-instgrm-permalink={post.post_url}
-                  style={{ width: '100%', margin: 0, border: 0, padding: 0, minWidth: 0 }}
-                />
-              </div>
+          <div className="grid grid-cols-3 gap-2.5">
+            {instaPosts.map((post, i) => (
+              <motion.a
+                key={post.id}
+                href={post.post_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.08 }}
+                className="group relative aspect-square rounded-xl overflow-hidden border border-border bg-card hover:border-primary/30 transition-all duration-300"
+              >
+                {/* Gradient background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-pink-500/10 to-purple-600/10 group-hover:from-amber-500/20 group-hover:via-pink-500/20 group-hover:to-purple-600/20 transition-all duration-300" />
+                
+                {/* Center icon */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 via-pink-500 to-purple-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <Instagram className="h-5 w-5 text-white" />
+                  </div>
+                  <span className="text-[10px] font-semibold text-muted-foreground group-hover:text-foreground transition-colors flex items-center gap-1">
+                    Ver post <ExternalLink className="h-2.5 w-2.5" />
+                  </span>
+                </div>
+
+                {/* Hover glow */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-t from-primary/5 to-transparent" />
+              </motion.a>
             ))}
           </div>
         </section>
