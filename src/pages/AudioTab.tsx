@@ -268,39 +268,30 @@ const AudioTab = () => {
               Instagram
             </h2>
           </div>
-          <div className="grid grid-cols-3 gap-2.5">
-            {instaPosts.map((post, i) => (
-              <motion.a
-                key={post.id}
-                href={post.post_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08 }}
-                className="group relative aspect-square rounded-xl overflow-hidden border border-border bg-card hover:border-primary/30 transition-all duration-300"
-              >
-                {/* Thumbnail or gradient fallback */}
-                {post.thumbnail_url ? (
-                  <img src={post.thumbnail_url} alt="" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                ) : (
-                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-pink-500/10 to-purple-600/10" />
-                )}
-
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors duration-300" />
-
-                {/* Center icon */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 via-pink-500 to-purple-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                    <Instagram className="h-4 w-4 text-white" />
-                  </div>
-                  <span className="text-[10px] font-semibold text-white/90 flex items-center gap-1">
-                    Ver post <ExternalLink className="h-2.5 w-2.5" />
-                  </span>
-                </div>
-              </motion.a>
-            ))}
+          <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
+            {instaPosts.map((post, i) => {
+              // Extract embed URL from post URL
+              const embedUrl = post.post_url.replace(/\/?(\?.*)?$/, '/embed/');
+              return (
+                <motion.div
+                  key={post.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.08 }}
+                  className="flex-shrink-0 w-[280px] snap-start rounded-xl overflow-hidden border border-border bg-card"
+                >
+                  <iframe
+                    src={embedUrl}
+                    className="w-full border-0"
+                    style={{ minHeight: 380 }}
+                    scrolling="no"
+                    allowTransparency
+                    loading="lazy"
+                    title={`Instagram post ${i + 1}`}
+                  />
+                </motion.div>
+              );
+            })}
           </div>
         </section>
       )}
