@@ -184,6 +184,51 @@ export type Database = {
           },
         ]
       }
+      push_history: {
+        Row: {
+          created_at: string
+          icon_url: string | null
+          id: string
+          image_url: string | null
+          link_url: string | null
+          message: string
+          onesignal_id: string | null
+          recipients: number
+          sent_by: string | null
+          status: string
+          target: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          icon_url?: string | null
+          id?: string
+          image_url?: string | null
+          link_url?: string | null
+          message: string
+          onesignal_id?: string | null
+          recipients?: number
+          sent_by?: string | null
+          status?: string
+          target?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          icon_url?: string | null
+          id?: string
+          image_url?: string | null
+          link_url?: string | null
+          message?: string
+          onesignal_id?: string | null
+          recipients?: number
+          sent_by?: string | null
+          status?: string
+          target?: string
+          title?: string
+        }
+        Relationships: []
+      }
       radio_settings: {
         Row: {
           category: string
