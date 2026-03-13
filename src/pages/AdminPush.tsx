@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Bell, Save, Loader2, Upload, X, Image as ImageIcon, Send, Users, Clock, CheckCircle, XCircle, History } from 'lucide-react';
+import { ArrowLeft, Bell, Save, Loader2, Upload, X, Image as ImageIcon, Send, Users, Clock, CheckCircle, XCircle, History, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -133,14 +133,41 @@ const AdminPush = () => {
   const [linkUrl, setLinkUrl] = useState('');
   const [target, setTarget] = useState('all');
   const [history, setHistory] = useState<PushRecord[]>([]);
+  const [historyPage, setHistoryPage] = useState(0);
+  const [historyTotal, setHistoryTotal] = useState(0);
+  const [resending, setResending] = useState<string | null>(null);
+  const PAGE_SIZE = 10;
 
-  const fetchHistory = async () => {
-    const { data } = await supabase
+  const fetchHistory = async (page = 0) => {
+    const from = page * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+    const { data, count } = await supabase
       .from('push_history')
-      .select('id, title, message, target, recipients, status, created_at')
+      .select('id, title, message, target, recipients, status, created_at', { count: 'exact' })
       .order('created_at', { ascending: false })
-      .limit(30);
+      .range(from, to);
     if (data) setHistory(data as PushRecord[]);
+    if (count !== null) setHistoryTotal(count);
+    setHistoryPage(page);
+  };
+
+  const handleResend = async (h: PushRecord) => {
+    if (!confirm(`Reenviar "${h.title}" para ${TARGET_LABELS[h.target] || h.target}?`)) return;
+    setResending(h.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-push', {
+        body: { title: h.title, message: h.message, target: h.target },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: '🚀 Push reenviada!', description: `${data?.recipients || 0} destinatário(s).` });
+      await fetchHistory(historyPage);
+    } catch (err: any) {
+      toast({ title: 'Erro ao reenviar', description: err.message, variant: 'destructive' });
+      await fetchHistory(historyPage);
+    } finally {
+      setResending(null);
+    }
   };
 
   useEffect(() => {
@@ -216,14 +243,14 @@ const AdminPush = () => {
         title: '🚀 Push enviada com sucesso!',
         description: `Enviada para ${data?.recipients || 0} dispositivo(s).`,
       });
-      await fetchHistory();
+      await fetchHistory(0);
     } catch (err: any) {
       toast({
         title: 'Erro ao enviar push',
         description: err.message || 'Tente novamente',
         variant: 'destructive',
       });
-      await fetchHistory();
+      await fetchHistory(0);
     } finally {
       setSending(false);
     }
@@ -405,7 +432,7 @@ const AdminPush = () => {
               <div className="flex items-center gap-2">
                 <History className="h-4 w-4 text-slate-400" />
                 <span className="text-xs font-semibold text-slate-700">Histórico de envios</span>
-                <span className="text-[10px] text-slate-400 ml-auto">{history.length} registro(s)</span>
+                <span className="text-[10px] text-slate-400 ml-auto">{historyTotal} registro(s)</span>
               </div>
 
               {history.length === 0 ? (
@@ -414,42 +441,77 @@ const AdminPush = () => {
                   <p className="text-xs text-slate-400">Nenhum envio registrado ainda.</p>
                 </div>
               ) : (
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {history.map(h => (
-                    <div key={h.id} className="flex items-start gap-3 px-3 py-2.5 rounded-lg border border-slate-100 bg-slate-50/50">
-                      <div className="mt-0.5">
-                        {h.status === 'sent' ? (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-red-500" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-slate-700 truncate">{h.title}</p>
-                        <p className="text-[11px] text-slate-500 truncate">{h.message}</p>
-                        <div className="flex items-center gap-3 mt-1">
-                          <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                            <Users className="h-2.5 w-2.5" />
-                            {TARGET_LABELS[h.target] || h.target}
+                <>
+                  <div className="space-y-2">
+                    {history.map(h => (
+                      <div key={h.id} className="flex items-start gap-3 px-3 py-2.5 rounded-lg border border-slate-100 bg-slate-50/50">
+                        <div className="mt-0.5">
+                          {h.status === 'sent' ? (
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <XCircle className="h-4 w-4 text-red-500" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-slate-700 truncate">{h.title}</p>
+                          <p className="text-[11px] text-slate-500 truncate">{h.message}</p>
+                          <div className="flex items-center gap-3 mt-1">
+                            <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                              <Users className="h-2.5 w-2.5" />
+                              {TARGET_LABELS[h.target] || h.target}
+                            </span>
+                            <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                              <Send className="h-2.5 w-2.5" />
+                              {h.recipients} destinatário(s)
+                            </span>
+                            <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                              <Clock className="h-2.5 w-2.5" />
+                              {new Date(h.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1.5">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            h.status === 'sent' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                          }`}>
+                            {h.status === 'sent' ? 'Enviado' : 'Falhou'}
                           </span>
-                          <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                            <Send className="h-2.5 w-2.5" />
-                            {h.recipients} destinatário(s)
-                          </span>
-                          <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                            <Clock className="h-2.5 w-2.5" />
-                            {new Date(h.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                          </span>
+                          <button
+                            onClick={() => handleResend(h)}
+                            disabled={resending === h.id}
+                            className="h-6 px-2 rounded-md bg-slate-100 text-slate-500 text-[10px] font-semibold flex items-center gap-1 hover:bg-indigo-100 hover:text-indigo-600 transition-colors disabled:opacity-50"
+                          >
+                            {resending === h.id ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <RefreshCw className="h-2.5 w-2.5" />}
+                            Reenviar
+                          </button>
                         </div>
                       </div>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        h.status === 'sent' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                      }`}>
-                        {h.status === 'sent' ? 'Enviado' : 'Falhou'}
+                    ))}
+                  </div>
+
+                  {/* Pagination */}
+                  {historyTotal > PAGE_SIZE && (
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                      <button
+                        onClick={() => fetchHistory(historyPage - 1)}
+                        disabled={historyPage === 0}
+                        className="h-8 px-3 rounded-lg bg-slate-100 text-slate-500 text-xs font-medium flex items-center gap-1 hover:bg-slate-200 transition-colors disabled:opacity-40"
+                      >
+                        <ChevronLeft className="h-3.5 w-3.5" /> Anterior
+                      </button>
+                      <span className="text-[10px] text-slate-400">
+                        Página {historyPage + 1} de {Math.ceil(historyTotal / PAGE_SIZE)}
                       </span>
+                      <button
+                        onClick={() => fetchHistory(historyPage + 1)}
+                        disabled={(historyPage + 1) * PAGE_SIZE >= historyTotal}
+                        className="h-8 px-3 rounded-lg bg-slate-100 text-slate-500 text-xs font-medium flex items-center gap-1 hover:bg-slate-200 transition-colors disabled:opacity-40"
+                      >
+                        Próxima <ChevronRight className="h-3.5 w-3.5" />
+                      </button>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </div>
           </>
