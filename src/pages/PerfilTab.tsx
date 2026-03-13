@@ -59,6 +59,7 @@ const PerfilTab = () => {
       ]);
       setProfile(profileRes.data as Profile | null);
       setRedemptions((redemptionsRes.data as Redemption[]) || []);
+      setVouchers((vouchersRes.data as Voucher[]) || []);
       if (rankRes.data) {
         const idx = rankRes.data.findIndex((p: any) => p.user_id === user.id);
         setRank(idx >= 0 ? idx + 1 : null);
