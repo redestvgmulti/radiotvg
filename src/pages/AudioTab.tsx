@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Pause, Headphones, Calendar, ChevronRight, Volume2, VolumeX, MessageCircle, Instagram } from 'lucide-react';
+import { Play, Pause, Headphones, Calendar, ChevronRight, Volume2, VolumeX, MessageCircle, Instagram, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import EnvironmentSelector from '@/components/EnvironmentSelector';
 import AdDisplay from '@/components/AdDisplay';
