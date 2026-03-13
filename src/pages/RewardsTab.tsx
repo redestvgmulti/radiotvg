@@ -166,6 +166,14 @@ const RewardsTab = () => {
           </section>
         </>
       )}
+      <VoucherModal
+        open={voucherModal.open}
+        onOpenChange={(open) => setVoucherModal(prev => ({ ...prev, open }))}
+        voucherCode={voucherModal.code}
+        protocolNumber={voucherModal.protocol}
+        rewardName={voucherModal.rewardName}
+        pointsSpent={voucherModal.points}
+      />
     </motion.div>
   );
 };
