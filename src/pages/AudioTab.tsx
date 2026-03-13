@@ -146,24 +146,18 @@ const AudioTab = () => {
       </section>
 
 
-      {/* ===== NO AR AGORA ===== */}
-      {nowPlaying && (
+      {/* ===== TOCANDO AGORA ===== */}
+      {(currentTrack.title || currentTrack.artist) && (
         <section className="px-4 mt-6">
-          <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] mb-3 px-1">Ao Vivo Agora</h2>
+          <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] mb-3 px-1">Tocando Agora</h2>
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             className="flex items-center gap-4 p-4 rounded-2xl bg-card border border-white/[0.06] card-glow">
             <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/30 to-accent/20 flex items-center justify-center flex-shrink-0">
               <Headphones className="h-6 w-6 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="text-foreground font-display font-bold text-base truncate">{nowPlaying.name}</p>
-                <span className="flex-shrink-0 w-2 h-2 rounded-full bg-live animate-pulse" />
-              </div>
-              <p className="text-muted-foreground text-xs mt-0.5">com {nowPlaying.host}</p>
-              <p className="text-muted-foreground/60 text-[10px] mt-0.5">
-                {nowPlaying.start_time.slice(0, 5)} – {nowPlaying.end_time.slice(0, 5)}
-              </p>
+              <p className="text-foreground font-display font-bold text-base truncate">{currentTrack.title}</p>
+              <p className="text-muted-foreground text-xs mt-0.5">{currentTrack.artist}</p>
             </div>
             <motion.button whileTap={{ scale: 0.9 }} onClick={togglePlay} disabled={!streamUrl}
               className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-[0_0_15px_hsl(var(--primary)/0.3)] disabled:opacity-40">
