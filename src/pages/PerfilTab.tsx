@@ -290,7 +290,6 @@ const PerfilTab = () => {
             </div>
           )}
 
-          <InstagramSection />
 
           {/* Logout */}
           <div className="px-4 mt-6 mb-4">
