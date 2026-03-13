@@ -143,7 +143,6 @@ const PerfilTab = () => {
             Criar conta
           </motion.button>
         </div>
-        <InstagramSection />
       </motion.div>
     );
   }
