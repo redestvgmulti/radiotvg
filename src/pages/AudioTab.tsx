@@ -300,7 +300,6 @@ const AudioTab = () => {
           </div>
         </section>
       )}
-      )}
     </motion.div>
   );
 };
