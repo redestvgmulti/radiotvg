@@ -220,7 +220,7 @@ const AudioTab = () => {
       {whatsappNumber && (
         <section className="px-4 mt-6 flex justify-center">
           <motion.a
-            href={`https://wa.me/${whatsappNumber}`}
+            href={`https://wa.me/${whatsappNumber}${whatsappMessage ? `?text=${encodeURIComponent(whatsappMessage)}` : ''}`}
             target="_blank"
             rel="noopener noreferrer"
             whileTap={{ scale: 0.96 }}
