@@ -2,10 +2,6 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Calendar, Plus, Pencil, Trash2, Clock, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
@@ -28,6 +24,9 @@ interface Station {
 }
 
 const emptyForm = { name: '', host: '', day_of_week: 1, start_time: '08:00', end_time: '09:00', station_id: '' };
+
+const inputClass = "w-full h-9 px-3 rounded-lg bg-white border border-slate-200 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-colors";
+const selectClass = "w-full h-9 px-3 rounded-lg bg-white border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-colors appearance-none";
 
 const AdminPrograms = () => {
   const navigate = useNavigate();
@@ -76,8 +75,8 @@ const AdminPrograms = () => {
     toast({ title: 'Programa removido' }); fetchData();
   };
 
-  const handleToggle = async (id: string, is_active: boolean) => {
-    await supabase.from('programs').update({ is_active }).eq('id', id); fetchData();
+  const handleToggle = async (id: string, currentActive: boolean) => {
+    await supabase.from('programs').update({ is_active: !currentActive }).eq('id', id); fetchData();
   };
 
   const getStationLabel = (id: string | null) => stations.find(s => s.id === id)?.label;
@@ -108,29 +107,23 @@ const AdminPrograms = () => {
       {showForm && (
         <div className="border-b border-slate-200 bg-slate-50 px-5 py-4 space-y-3">
           <p className="text-xs font-semibold text-slate-600">{editingId ? 'Editar' : 'Novo'} Programa</p>
-          <Input placeholder="Nome do programa" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="h-9 text-sm bg-white border-slate-200 text-slate-800 placeholder:text-slate-300" />
-          <Input placeholder="Apresentador" value={form.host} onChange={e => setForm(f => ({ ...f, host: e.target.value }))} className="h-9 text-sm bg-white border-slate-200 text-slate-800 placeholder:text-slate-300" />
-          <Select value={String(form.day_of_week)} onValueChange={v => setForm(f => ({ ...f, day_of_week: Number(v) }))}>
-            <SelectTrigger className="h-9 text-sm bg-white border-slate-200 text-slate-800"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {DAYS.map((d, i) => <SelectItem key={i} value={String(i)}>{d}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={form.station_id} onValueChange={v => setForm(f => ({ ...f, station_id: v === '__none__' ? '' : v }))}>
-            <SelectTrigger className="h-9 text-sm bg-white border-slate-200 text-slate-800"><SelectValue placeholder="Estação (todas)" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__none__">Todas as estações</SelectItem>
-              {stations.map(s => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <input placeholder="Nome do programa" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className={inputClass} />
+          <input placeholder="Apresentador" value={form.host} onChange={e => setForm(f => ({ ...f, host: e.target.value }))} className={inputClass} />
+          <select value={String(form.day_of_week)} onChange={e => setForm(f => ({ ...f, day_of_week: Number(e.target.value) }))} className={selectClass}>
+            {DAYS.map((d, i) => <option key={i} value={String(i)}>{d}</option>)}
+          </select>
+          <select value={form.station_id || '__none__'} onChange={e => setForm(f => ({ ...f, station_id: e.target.value === '__none__' ? '' : e.target.value }))} className={selectClass}>
+            <option value="__none__">Todas as estações</option>
+            {stations.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+          </select>
           <div className="flex gap-2">
             <div className="flex-1">
               <label className="text-[10px] text-slate-500 mb-1 block">Início</label>
-              <Input type="time" value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))} className="h-9 text-sm bg-white border-slate-200 text-slate-800" />
+              <input type="time" value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))} className={inputClass} />
             </div>
             <div className="flex-1">
               <label className="text-[10px] text-slate-500 mb-1 block">Fim</label>
-              <Input type="time" value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} className="h-9 text-sm bg-white border-slate-200 text-slate-800" />
+              <input type="time" value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} className={inputClass} />
             </div>
           </div>
           <div className="flex gap-2 pt-1">
@@ -177,7 +170,11 @@ const AdminPrograms = () => {
                   )}
                 </div>
               </div>
-              <Switch checked={p.is_active} onCheckedChange={v => handleToggle(p.id, v)} className="scale-75" />
+              {/* Toggle */}
+              <button onClick={() => handleToggle(p.id, p.is_active)}
+                className={`w-10 h-5 rounded-full relative transition-colors ${p.is_active ? 'bg-green-500' : 'bg-slate-300'}`}>
+                <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${p.is_active ? 'left-[22px]' : 'left-0.5'}`} />
+              </button>
               <button onClick={() => handleEdit(p)} className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors">
                 <Pencil className="h-4 w-4" />
               </button>
