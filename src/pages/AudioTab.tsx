@@ -55,23 +55,6 @@ const AudioTab = () => {
     load();
   }, []);
 
-  // Load Instagram embed script
-  useEffect(() => {
-    if (instaPosts.length > 0 && !instaLoaded) {
-      const script = document.createElement('script');
-      script.src = 'https://www.instagram.com/embed.js';
-      script.async = true;
-      script.onload = () => {
-        setInstaLoaded(true);
-        (window as any).instgrm?.Embeds?.process();
-      };
-      document.body.appendChild(script);
-      return () => { document.body.removeChild(script); };
-    } else if (instaPosts.length > 0 && instaLoaded) {
-      setTimeout(() => (window as any).instgrm?.Embeds?.process(), 100);
-    }
-  }, [instaPosts, instaLoaded]);
-
   const now = new Date();
   const currentDay = now.getDay();
   const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
