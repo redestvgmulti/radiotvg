@@ -35,6 +35,8 @@ const AdminBoosters = lazy(() => import("./pages/AdminBoosters"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const AdminVouchers = lazy(() => import("./pages/AdminVouchers"));
 const AdminInstagram = lazy(() => import("./pages/AdminInstagram"));
+const AdminWhatsapp = lazy(() => import("./pages/AdminWhatsapp"));
+const AdminPush = lazy(() => import("./pages/AdminPush"));
 
 const queryClient = new QueryClient();
 
@@ -73,6 +75,8 @@ const AppLayout = () => {
         <Route path="/admin/users" element={<AdminLayout><Suspense fallback={<AdminFallback />}><AdminUsers /></Suspense></AdminLayout>} />
         <Route path="/admin/vouchers" element={<AdminLayout><Suspense fallback={<AdminFallback />}><AdminVouchers /></Suspense></AdminLayout>} />
         <Route path="/admin/instagram" element={<AdminLayout><Suspense fallback={<AdminFallback />}><AdminInstagram /></Suspense></AdminLayout>} />
+        <Route path="/admin/whatsapp" element={<AdminLayout><Suspense fallback={<AdminFallback />}><AdminWhatsapp /></Suspense></AdminLayout>} />
+        <Route path="/admin/push" element={<AdminLayout><Suspense fallback={<AdminFallback />}><AdminPush /></Suspense></AdminLayout>} />
 
         <Route path="*" element={<NotFound />} />
       </Routes>

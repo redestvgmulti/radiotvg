@@ -39,17 +39,20 @@ const AudioTab = () => {
 
   const [programs, setPrograms] = useState<Program[]>([]);
   const [whatsappNumber, setWhatsappNumber] = useState<string | null>(null);
+  const [whatsappMessage, setWhatsappMessage] = useState<string>('');
   const [instaPosts, setInstaPosts] = useState<{ id: string; post_url: string; thumbnail_url: string | null }[]>([]);
 
   useEffect(() => {
     const load = async () => {
-      const [progsRes, wpRes, instaRes] = await Promise.all([
+      const [progsRes, wpRes, wpMsgRes, instaRes] = await Promise.all([
         supabase.from('programs').select('*').eq('is_active', true).order('day_of_week').order('start_time'),
         supabase.from('radio_settings').select('value').eq('key', 'whatsapp_number').maybeSingle(),
+        supabase.from('radio_settings').select('value').eq('key', 'whatsapp_message').maybeSingle(),
         supabase.from('instagram_posts').select('id, post_url, thumbnail_url').eq('is_active', true).order('sort_order').limit(6),
       ]);
       setPrograms((progsRes.data as Program[]) || []);
       if (wpRes.data?.value) setWhatsappNumber(wpRes.data.value);
+      if (wpMsgRes.data?.value) setWhatsappMessage(wpMsgRes.data.value);
       setInstaPosts((instaRes.data as any[]) || []);
     };
     load();
@@ -217,7 +220,7 @@ const AudioTab = () => {
       {whatsappNumber && (
         <section className="px-4 mt-6 flex justify-center">
           <motion.a
-            href={`https://wa.me/${whatsappNumber}`}
+            href={`https://wa.me/${whatsappNumber}${whatsappMessage ? `?text=${encodeURIComponent(whatsappMessage)}` : ''}`}
             target="_blank"
             rel="noopener noreferrer"
             whileTap={{ scale: 0.96 }}

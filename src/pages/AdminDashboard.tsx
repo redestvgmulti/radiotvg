@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Radio, Users, Megaphone, Calendar, Loader2, Circle, Gift, Zap, Ticket, Instagram, ChevronRight, Activity } from 'lucide-react';
+import { Radio, Users, Megaphone, Calendar, Loader2, Circle, Gift, Zap, Ticket, Instagram, ChevronRight, Activity, MessageCircle, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -57,12 +57,14 @@ const AdminDashboard = () => {
         { icon: Zap, label: 'Boosters', desc: 'Multiplicadores de pontos', path: '/admin/boosters', color: 'bg-amber-500' },
         { icon: Ticket, label: 'Vouchers', desc: 'Gestão de vouchers', path: '/admin/vouchers', color: 'bg-emerald-500' },
         { icon: Instagram, label: 'Instagram', desc: 'Posts do Instagram na home', path: '/admin/instagram', color: 'bg-rose-500' },
+        { icon: MessageCircle, label: 'WhatsApp', desc: 'Número e mensagem', path: '/admin/whatsapp', color: 'bg-green-500' },
       ],
     },
     {
       label: 'Sistema',
       items: [
         { icon: Users, label: 'Usuários', desc: 'Roles e permissões', path: '/admin/users', color: 'bg-slate-500' },
+        { icon: Bell, label: 'Mensagem Push', desc: 'Notificações push', path: '/admin/push', color: 'bg-indigo-500' },
       ],
     },
   ];
