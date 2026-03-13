@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, Save, Loader2, Power, Pencil, X, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Power, Pencil, X, Plus, Trash2, Radio, Signal } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -93,72 +93,103 @@ const AdminStreaming = () => {
     setSaving(null);
   };
 
-
+  const activeCount = environments.filter(e => e.is_active).length;
 
   return (
     <>
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
-        <button onClick={() => navigate('/admin')} className="h-7 w-7 rounded-md bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-3.5 w-3.5" />
+      {/* Header */}
+      <div className="flex items-center gap-3 px-5 py-3.5 bg-white border-b border-slate-200 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+        <button onClick={() => navigate('/admin')} className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors">
+          <ArrowLeft className="h-4 w-4" />
         </button>
-        <div className="flex-1">
-          <h1 className="text-sm font-bold text-foreground">Streaming</h1>
-          <p className="text-[10px] text-muted-foreground">Áudio · Ambientes</p>
+        <div className="flex items-center gap-2.5 flex-1">
+          <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center shadow-sm">
+            <Radio className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <h1 className="text-sm font-bold text-slate-800">Streaming</h1>
+            <p className="text-[10px] text-slate-400">Áudio · Ambientes</p>
+          </div>
         </div>
         <button onClick={() => setShowNew(!showNew)}
-          className="h-7 px-2.5 rounded-md bg-primary text-primary-foreground text-[10px] font-bold flex items-center gap-1">
-          <Plus className="h-3 w-3" /> Novo
+          className="h-8 px-3 rounded-lg bg-blue-600 text-white text-xs font-semibold flex items-center gap-1.5 hover:bg-blue-700 transition-colors shadow-sm">
+          <Plus className="h-3.5 w-3.5" /> Novo
         </button>
       </div>
 
       {/* New environment form */}
       <AnimatePresence>
         {showNew && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-b border-border">
-            <div className="px-4 py-3 space-y-2 bg-muted/30">
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase">Novo Ambiente</p>
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-b border-slate-200">
+            <div className="px-5 py-4 space-y-3 bg-slate-50">
+              <p className="text-xs font-semibold text-slate-600">Novo Ambiente</p>
               <InputField label="Nome" value={newForm.label} onChange={v => setNewForm(f => ({ ...f, label: v }))} placeholder="Ex: Sertanejo" />
               <InputField label="Slug (único)" value={newForm.slug} onChange={v => setNewForm(f => ({ ...f, slug: v }))} placeholder="Ex: sertanejo" />
               <InputField label="URL do Stream (HLS)" value={newForm.stream_url} onChange={v => setNewForm(f => ({ ...f, stream_url: v }))} placeholder="https://stream.exemplo.com/live.m3u8" type="url" />
               <InputField label="URL da Imagem" value={newForm.image_url} onChange={v => setNewForm(f => ({ ...f, image_url: v }))} placeholder="https://exemplo.com/imagem.jpg" type="url" />
               <InputField label="Ordem" value={String(newForm.sort_order)} onChange={v => setNewForm(f => ({ ...f, sort_order: parseInt(v) || 0 }))} type="number" />
-              <div className="flex gap-2">
+              <div className="flex gap-2 pt-1">
                 <button onClick={handleCreate} disabled={creating}
-                  className="flex-1 h-8 rounded-lg bg-primary text-primary-foreground font-semibold text-xs flex items-center justify-center gap-1.5 disabled:opacity-60">
-                  {creating ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Save className="h-3 w-3" /> Criar</>}
+                  className="flex-1 h-9 rounded-lg bg-blue-600 text-white font-semibold text-xs flex items-center justify-center gap-1.5 disabled:opacity-60 hover:bg-blue-700 transition-colors shadow-sm">
+                  {creating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><Save className="h-3.5 w-3.5" /> Criar</>}
                 </button>
-                <button onClick={() => setShowNew(false)} className="h-8 px-3 rounded-lg border border-border text-xs text-muted-foreground">Cancelar</button>
+                <button onClick={() => setShowNew(false)} className="h-9 px-4 rounded-lg border border-slate-200 text-xs text-slate-500 hover:bg-slate-100 transition-colors">Cancelar</button>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="max-w-md mx-auto px-4 py-4">
+      <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 py-6">
+        {/* Stats */}
+        {!loading && (
+          <div className="grid grid-cols-3 gap-3 mb-5">
+            <div className="rounded-xl bg-white border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-3 text-center">
+              <p className="text-2xl font-bold text-slate-800">{environments.length}</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">Total</p>
+            </div>
+            <div className="rounded-xl bg-white border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-3 text-center">
+              <p className="text-2xl font-bold text-green-600">{activeCount}</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">Ativos</p>
+            </div>
+            <div className="rounded-xl bg-white border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-3 text-center">
+              <p className="text-2xl font-bold text-slate-400">{environments.length - activeCount}</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">Inativos</p>
+            </div>
+          </div>
+        )}
+
         {loading ? (
-          <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+          <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-slate-400" /></div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {environments.map((env) => (
-              <div key={env.id} className="rounded-lg border border-border bg-card overflow-hidden">
-                <div className="flex items-center gap-2.5 px-3 py-2.5">
-                  <div className={`w-1.5 h-8 rounded-full flex-shrink-0 ${env.is_active ? 'bg-green-500' : 'bg-muted-foreground/20'}`} />
+              <motion.div
+                key={env.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-xl bg-white border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden"
+              >
+                <div className="flex items-center gap-3 px-4 py-3.5">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${env.is_active ? 'bg-green-100' : 'bg-slate-100'}`}>
+                    <Signal className={`h-4.5 w-4.5 ${env.is_active ? 'text-green-600' : 'text-slate-400'}`} />
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-foreground">{env.label}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">{env.stream_url || 'Sem URL'}</p>
+                    <p className="text-sm font-semibold text-slate-800">{env.label}</p>
+                    <p className="text-[11px] text-slate-400 truncate font-mono">{env.stream_url || 'Sem URL configurada'}</p>
                   </div>
                   <div className="flex items-center gap-1">
                     <button onClick={() => toggleActive(env)} disabled={saving === env.id}
-                      className={`h-6 w-6 rounded flex items-center justify-center transition-colors ${env.is_active ? 'text-green-500 hover:bg-green-500/10' : 'text-muted-foreground hover:bg-muted'}`}>
-                      <Power className="h-3 w-3" />
+                      className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${env.is_active ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>
+                      <Power className="h-4 w-4" />
                     </button>
                     <button onClick={() => editingId === env.id ? cancelEdit() : startEdit(env)}
-                      className="h-6 w-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                      {editingId === env.id ? <X className="h-3 w-3" /> : <Pencil className="h-3 w-3" />}
+                      className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${editingId === env.id ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600'}`}>
+                      {editingId === env.id ? <X className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
                     </button>
                     <button onClick={() => handleDelete(env)} disabled={saving === env.id}
-                      className="h-6 w-6 rounded flex items-center justify-center text-destructive/60 hover:text-destructive hover:bg-destructive/10 transition-colors">
-                      <Trash2 className="h-3 w-3" />
+                      className="h-8 w-8 rounded-lg flex items-center justify-center bg-slate-100 text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors">
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
@@ -166,20 +197,20 @@ const AdminStreaming = () => {
                 <AnimatePresence>
                   {editingId === env.id && (
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
-                      <div className="px-3 pb-3 pt-2 space-y-2 border-t border-border">
+                      <div className="px-4 pb-4 pt-3 space-y-3 border-t border-slate-100 bg-slate-50/50">
                         <InputField label="Nome" value={editForm.label || ''} onChange={(v) => setEditForm({ ...editForm, label: v })} />
                         <InputField label="Descrição" value={editForm.description || ''} onChange={(v) => setEditForm({ ...editForm, description: v })} />
                         <InputField label="URL do Stream (HLS)" value={editForm.stream_url || ''} onChange={(v) => setEditForm({ ...editForm, stream_url: v })} placeholder="https://stream.exemplo.com/live.m3u8" type="url" />
                         <InputField label="URL da Imagem" value={editForm.image_url || ''} onChange={(v) => setEditForm({ ...editForm, image_url: v })} placeholder="https://exemplo.com/imagem.jpg" type="url" />
                         <button onClick={saveEdit} disabled={saving === env.id}
-                          className="w-full h-8 rounded-lg bg-primary text-primary-foreground font-semibold text-xs flex items-center justify-center gap-1.5 disabled:opacity-60">
-                          {saving === env.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Save className="h-3 w-3" /> Salvar</>}
+                          className="w-full h-9 rounded-lg bg-blue-600 text-white font-semibold text-xs flex items-center justify-center gap-1.5 disabled:opacity-60 hover:bg-blue-700 transition-colors shadow-sm">
+                          {saving === env.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><Save className="h-3.5 w-3.5" /> Salvar</>}
                         </button>
                       </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </div>
+              </motion.div>
             ))}
           </div>
         )}
