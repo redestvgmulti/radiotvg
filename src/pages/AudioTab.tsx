@@ -44,13 +44,15 @@ const AudioTab = () => {
 
   useEffect(() => {
     const load = async () => {
-      const [progsRes, wpRes, instaRes] = await Promise.all([
+      const [progsRes, wpRes, wpMsgRes, instaRes] = await Promise.all([
         supabase.from('programs').select('*').eq('is_active', true).order('day_of_week').order('start_time'),
         supabase.from('radio_settings').select('value').eq('key', 'whatsapp_number').maybeSingle(),
+        supabase.from('radio_settings').select('value').eq('key', 'whatsapp_message').maybeSingle(),
         supabase.from('instagram_posts').select('id, post_url, thumbnail_url').eq('is_active', true).order('sort_order').limit(6),
       ]);
       setPrograms((progsRes.data as Program[]) || []);
       if (wpRes.data?.value) setWhatsappNumber(wpRes.data.value);
+      if (wpMsgRes.data?.value) setWhatsappMessage(wpMsgRes.data.value);
       setInstaPosts((instaRes.data as any[]) || []);
     };
     load();
