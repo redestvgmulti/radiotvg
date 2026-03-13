@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Instagram, Plus, Trash2, Loader2, GripVertical, Image } from 'lucide-react';
+import { Instagram, Plus, Trash2, Loader2, GripVertical } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -11,6 +11,21 @@ interface InstaPost {
   sort_order: number;
   is_active: boolean;
 }
+
+const MAX_POSTS = 6;
+
+/** Limpa a URL do Instagram removendo query params e trailing slashes */
+const cleanInstagramUrl = (raw: string): string | null => {
+  try {
+    const url = new URL(raw.trim());
+    // Aceita /p/CODE/ ou /reel/CODE/
+    const match = url.pathname.match(/^\/(p|reel|tv)\/([A-Za-z0-9_-]+)/);
+    if (!match) return null;
+    return `https://www.instagram.com/${match[1]}/${match[2]}/`;
+  } catch {
+    return null;
+  }
+};
 
 const AdminInstagram = () => {
   const [posts, setPosts] = useState<InstaPost[]>([]);
@@ -31,19 +46,46 @@ const AdminInstagram = () => {
   useEffect(() => { fetchPosts(); }, []);
 
   const addPost = async () => {
-    if (!newUrl.trim()) return;
+    const cleanUrl = cleanInstagramUrl(newUrl);
+    if (!cleanUrl) {
+      toast({ title: 'URL inválida', description: 'Cole uma URL válida do Instagram (/p/... ou /reel/...)', variant: 'destructive' });
+      return;
+    }
+
+    // Check for duplicates
+    if (posts.some(p => p.post_url === cleanUrl)) {
+      toast({ title: 'Post duplicado', description: 'Esse post já está cadastrado.', variant: 'destructive' });
+      return;
+    }
+
     setAdding(true);
+
+    // If at limit, delete the oldest (highest sort_order)
+    if (posts.length >= MAX_POSTS) {
+      const oldest = posts[posts.length - 1];
+      await supabase.from('instagram_posts').delete().eq('id', oldest.id);
+    }
+
     const { error } = await supabase.from('instagram_posts').insert({
-      post_url: newUrl.trim(),
-      sort_order: posts.length,
+      post_url: cleanUrl,
+      sort_order: 0, // newest first
     });
+
+    if (!error) {
+      // Re-order: shift all existing sort_orders up by 1
+      const currentPosts = posts.filter(p => posts.length < MAX_POSTS || p.id !== posts[posts.length - 1].id);
+      for (let i = 0; i < currentPosts.length; i++) {
+        await supabase.from('instagram_posts').update({ sort_order: i + 1 }).eq('id', currentPosts[i].id);
+      }
+    }
+
     if (error) {
       toast({ title: 'Erro', description: error.message, variant: 'destructive' });
     } else {
       toast({ title: 'Post adicionado' });
       setNewUrl('');
-      fetchPosts();
     }
+    await fetchPosts();
     setAdding(false);
   };
 
@@ -66,7 +108,7 @@ const AdminInstagram = () => {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Cole a URL do post do Instagram. O embed será exibido automaticamente na home.
+        Cole a URL do post do Instagram. O embed será exibido automaticamente na home. Máximo de {MAX_POSTS} posts — ao adicionar um novo, o mais antigo será removido.
       </p>
 
       {/* Add new */}
@@ -84,6 +126,8 @@ const AdminInstagram = () => {
           Adicionar
         </motion.button>
       </div>
+
+      <p className="text-[10px] text-muted-foreground/60">{posts.length}/{MAX_POSTS} posts cadastrados</p>
 
       {loading ? (
         <div className="flex justify-center py-12"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
