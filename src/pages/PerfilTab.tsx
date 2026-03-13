@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { User, Trophy, Clock, Gift, ChevronRight, LogIn, LogOut, Loader2, Star, Instagram, Camera, Ticket } from 'lucide-react';
+import { User, Trophy, Clock, Gift, ChevronRight, LogIn, LogOut, Loader2, Star, Camera, Ticket } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
