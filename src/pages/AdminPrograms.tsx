@@ -108,16 +108,16 @@ const AdminPrograms = () => {
       {showForm && (
         <div className="border-b border-slate-200 bg-slate-50 px-5 py-4 space-y-3">
           <p className="text-xs font-semibold text-slate-600">{editingId ? 'Editar' : 'Novo'} Programa</p>
-          <Input placeholder="Nome do programa" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="h-9 text-sm bg-white border-slate-200" />
-          <Input placeholder="Apresentador" value={form.host} onChange={e => setForm(f => ({ ...f, host: e.target.value }))} className="h-9 text-sm bg-white border-slate-200" />
+          <Input placeholder="Nome do programa" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="h-9 text-sm bg-white border-slate-200 text-slate-800 placeholder:text-slate-300" />
+          <Input placeholder="Apresentador" value={form.host} onChange={e => setForm(f => ({ ...f, host: e.target.value }))} className="h-9 text-sm bg-white border-slate-200 text-slate-800 placeholder:text-slate-300" />
           <Select value={String(form.day_of_week)} onValueChange={v => setForm(f => ({ ...f, day_of_week: Number(v) }))}>
-            <SelectTrigger className="h-9 text-sm bg-white border-slate-200"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-9 text-sm bg-white border-slate-200 text-slate-800"><SelectValue /></SelectTrigger>
             <SelectContent>
               {DAYS.map((d, i) => <SelectItem key={i} value={String(i)}>{d}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={form.station_id} onValueChange={v => setForm(f => ({ ...f, station_id: v === '__none__' ? '' : v }))}>
-            <SelectTrigger className="h-9 text-sm bg-white border-slate-200"><SelectValue placeholder="Estação (todas)" /></SelectTrigger>
+            <SelectTrigger className="h-9 text-sm bg-white border-slate-200 text-slate-800"><SelectValue placeholder="Estação (todas)" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="__none__">Todas as estações</SelectItem>
               {stations.map(s => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
@@ -126,11 +126,11 @@ const AdminPrograms = () => {
           <div className="flex gap-2">
             <div className="flex-1">
               <label className="text-[10px] text-slate-500 mb-1 block">Início</label>
-              <Input type="time" value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))} className="h-9 text-sm bg-white border-slate-200" />
+              <Input type="time" value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))} className="h-9 text-sm bg-white border-slate-200 text-slate-800" />
             </div>
             <div className="flex-1">
               <label className="text-[10px] text-slate-500 mb-1 block">Fim</label>
-              <Input type="time" value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} className="h-9 text-sm bg-white border-slate-200" />
+              <Input type="time" value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} className="h-9 text-sm bg-white border-slate-200 text-slate-800" />
             </div>
           </div>
           <div className="flex gap-2 pt-1">
