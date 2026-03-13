@@ -53,7 +53,7 @@ const AdminDashboard = () => {
       label: 'Conteúdo',
       items: [
         { icon: Calendar, label: 'Programação', desc: 'Grade de programas', path: '/admin/programs', color: 'bg-violet-500' },
-        { icon: Gift, label: 'Rewards', desc: 'Catálogo de recompensas', path: '/admin/rewards', color: 'bg-pink-500' },
+        { icon: Gift, label: 'Recompensas', desc: 'Catálogo de recompensas', path: '/admin/rewards', color: 'bg-pink-500' },
         { icon: Zap, label: 'Boosters', desc: 'Multiplicadores de pontos', path: '/admin/boosters', color: 'bg-amber-500' },
         { icon: Ticket, label: 'Vouchers', desc: 'Gestão de vouchers', path: '/admin/vouchers', color: 'bg-emerald-500' },
         { icon: Instagram, label: 'Instagram', desc: 'Posts do Instagram na home', path: '/admin/instagram', color: 'bg-rose-500' },
