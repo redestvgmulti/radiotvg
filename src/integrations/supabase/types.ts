@@ -312,6 +312,63 @@ export type Database = {
         }
         Relationships: []
       }
+      vouchers: {
+        Row: {
+          created_at: string | null
+          id: string
+          points_spent: number
+          protocol_number: string
+          redeemed_at: string | null
+          redeemed_by: string | null
+          redemption_id: string
+          reward_id: string
+          status: string
+          user_id: string
+          voucher_code: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          points_spent: number
+          protocol_number: string
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          redemption_id: string
+          reward_id: string
+          status?: string
+          user_id: string
+          voucher_code: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          points_spent?: number
+          protocol_number?: string
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          redemption_id?: string
+          reward_id?: string
+          status?: string
+          user_id?: string
+          voucher_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vouchers_redemption_id_fkey"
+            columns: ["redemption_id"]
+            isOneToOne: false
+            referencedRelation: "redemptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vouchers_reward_id_fkey"
+            columns: ["reward_id"]
+            isOneToOne: false
+            referencedRelation: "rewards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -327,6 +384,20 @@ export type Database = {
           reward_name: string
         }[]
       }
+      get_voucher_export: {
+        Args: never
+        Returns: {
+          created_at: string
+          display_name: string
+          email: string
+          points_spent: number
+          protocol_number: string
+          redeemed_at: string
+          reward_name: string
+          status: string
+          voucher_code: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -338,6 +409,7 @@ export type Database = {
         Args: { _reward_id: string; _user_id: string }
         Returns: Json
       }
+      redeem_reward_voucher: { Args: { _reward_id: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "user"

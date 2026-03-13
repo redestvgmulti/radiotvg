@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import VoucherModal from '@/components/VoucherModal';
 
 interface Reward {
   id: string;
@@ -27,6 +28,7 @@ const RewardsTab = () => {
   const [ranking, setRanking] = useState<RankEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [redeeming, setRedeeming] = useState<string | null>(null);
+  const [voucherModal, setVoucherModal] = useState<{ open: boolean; code: string; protocol: string; rewardName: string; points: number }>({ open: false, code: '', protocol: '', rewardName: '', points: 0 });
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -53,8 +55,7 @@ const RewardsTab = () => {
     if (!confirm(`Trocar ${reward.points_cost} pontos por "${reward.name}"?`)) return;
 
     setRedeeming(reward.id);
-    const { data, error } = await supabase.rpc('redeem_reward', {
-      _user_id: user.id,
+    const { data, error } = await supabase.rpc('redeem_reward_voucher', {
       _reward_id: reward.id,
     });
 
@@ -64,8 +65,15 @@ const RewardsTab = () => {
       return;
     }
 
-    toast({ title: '🎉 Resgate realizado!', description: `Você resgatou "${reward.name}"` });
-    setUserPoints((data as any).remaining_points);
+    const result = data as any;
+    setUserPoints(result.remaining_points);
+    setVoucherModal({
+      open: true,
+      code: result.voucher_code,
+      protocol: result.protocol_number,
+      rewardName: reward.name,
+      points: reward.points_cost,
+    });
     setRedeeming(null);
   };
 
@@ -158,6 +166,14 @@ const RewardsTab = () => {
           </section>
         </>
       )}
+      <VoucherModal
+        open={voucherModal.open}
+        onOpenChange={(open) => setVoucherModal(prev => ({ ...prev, open }))}
+        voucherCode={voucherModal.code}
+        protocolNumber={voucherModal.protocol}
+        rewardName={voucherModal.rewardName}
+        pointsSpent={voucherModal.points}
+      />
     </motion.div>
   );
 };

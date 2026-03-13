@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { User, Trophy, Clock, Gift, ChevronRight, LogIn, LogOut, Loader2, Star, Instagram, Camera } from 'lucide-react';
+import { User, Trophy, Clock, Gift, ChevronRight, LogIn, LogOut, Loader2, Star, Instagram, Camera, Ticket } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +21,16 @@ interface Redemption {
   reward_id: string;
 }
 
+interface Voucher {
+  id: string;
+  voucher_code: string;
+  protocol_number: string;
+  points_spent: number;
+  status: string;
+  created_at: string;
+  rewards: { name: string } | null;
+}
+
 const INSTAGRAM_HANDLE = 'tvgmulti';
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -29,6 +39,7 @@ const PerfilTab = () => {
   const { user, loading: authLoading, signOut } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [redemptions, setRedemptions] = useState<Redemption[]>([]);
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [rank, setRank] = useState<number | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -37,16 +48,18 @@ const PerfilTab = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!user) { setProfile(null); setRedemptions([]); setRank(null); return; }
+    if (!user) { setProfile(null); setRedemptions([]); setVouchers([]); setRank(null); return; }
     const load = async () => {
       setLoadingProfile(true);
-      const [profileRes, redemptionsRes, rankRes] = await Promise.all([
+      const [profileRes, redemptionsRes, rankRes, vouchersRes] = await Promise.all([
         supabase.from('profiles').select('display_name, avatar_url, total_points, total_listening_minutes').eq('user_id', user.id).single(),
         supabase.from('redemptions').select('*').eq('user_id', user.id).order('redeemed_at', { ascending: false }).limit(10),
         supabase.from('profiles').select('user_id').order('total_points', { ascending: false }),
+        supabase.from('vouchers').select('id, voucher_code, protocol_number, points_spent, status, created_at, rewards(name)').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
       ]);
       setProfile(profileRes.data as Profile | null);
       setRedemptions((redemptionsRes.data as Redemption[]) || []);
+      setVouchers((vouchersRes.data as Voucher[]) || []);
       if (rankRes.data) {
         const idx = rankRes.data.findIndex((p: any) => p.user_id === user.id);
         setRank(idx >= 0 ? idx + 1 : null);
@@ -223,6 +236,42 @@ const PerfilTab = () => {
               <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
             </motion.button>
           </div>
+
+          {/* Meus Vouchers */}
+          {vouchers.length > 0 && (
+            <div className="px-4 mb-5">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.15em] mb-3 px-1 flex items-center gap-1.5">
+                <Ticket className="h-3.5 w-3.5" /> Meus Vouchers
+              </p>
+              <div className="space-y-2">
+                {vouchers.map(v => {
+                  const statusMap: Record<string, { label: string; cls: string }> = {
+                    pending: { label: 'Ativo', cls: 'bg-green-500/10 text-green-500 border-green-500/20' },
+                    redeemed: { label: 'Utilizado', cls: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
+                    expired: { label: 'Expirado', cls: 'bg-muted text-muted-foreground border-border' },
+                    cancelled: { label: 'Cancelado', cls: 'bg-destructive/10 text-destructive border-destructive/20' },
+                  };
+                  const st = statusMap[v.status] || statusMap.pending;
+                  return (
+                    <div key={v.id} className="px-4 py-3 rounded-xl bg-card/50 border border-white/[0.04]">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-mono text-sm font-bold text-foreground">{v.voucher_code}</span>
+                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${st.cls}`}>{st.label}</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground font-mono mb-0.5">{v.protocol_number}</p>
+                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                        <span>{(v.rewards as any)?.name || 'Recompensa'}</span>
+                        <span>•</span>
+                        <span>{v.points_spent} pts</span>
+                        <span>•</span>
+                        <span>{new Date(v.created_at).toLocaleDateString('pt-BR')}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Redemption History */}
           {redemptions.length > 0 && (
