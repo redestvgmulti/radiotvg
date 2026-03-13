@@ -78,7 +78,7 @@ const AdminPrograms = () => {
   };
 
   const handleEdit = (p: Program) => {
-    setForm({ name: p.name, host: p.host, day_of_week: p.day_of_week, start_time: p.start_time.slice(0, 5), end_time: p.end_time.slice(0, 5), station_id: p.station_id || '' });
+    setForm({ name: p.name, host: p.host, day_of_week: p.day_of_week, all_days: false, start_time: p.start_time.slice(0, 5), end_time: p.end_time.slice(0, 5), station_id: p.station_id || '' });
     setEditingId(p.id); setShowForm(true);
   };
 
