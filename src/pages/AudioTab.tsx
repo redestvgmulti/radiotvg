@@ -39,18 +39,37 @@ const AudioTab = () => {
 
   const [programs, setPrograms] = useState<Program[]>([]);
   const [whatsappNumber, setWhatsappNumber] = useState<string | null>(null);
-  const [instaPosts, setInstaPosts] = useState<{ id: string; post_url: string }[]>([]);
+  const [instaPosts, setInstaPosts] = useState<{ id: string; post_url: string; thumbnail_url: string | null }[]>([]);
 
   useEffect(() => {
     const load = async () => {
       const [progsRes, wpRes, instaRes] = await Promise.all([
         supabase.from('programs').select('*').eq('is_active', true).order('day_of_week').order('start_time'),
         supabase.from('radio_settings').select('value').eq('key', 'whatsapp_number').maybeSingle(),
-        supabase.from('instagram_posts').select('id, post_url').eq('is_active', true).order('sort_order').limit(3),
+        supabase.from('instagram_posts').select('id, post_url, thumbnail_url').eq('is_active', true).order('sort_order').limit(3),
       ]);
       setPrograms((progsRes.data as Program[]) || []);
       if (wpRes.data?.value) setWhatsappNumber(wpRes.data.value);
-      setInstaPosts((instaRes.data as any[]) || []);
+
+      const posts = (instaRes.data as any[]) || [];
+      // Fetch thumbnails for posts missing them
+      const enriched = await Promise.all(
+        posts.map(async (post) => {
+          if (post.thumbnail_url) return post;
+          try {
+            const { data } = await supabase.functions.invoke('instagram-thumbnail', {
+              body: { url: post.post_url },
+            });
+            if (data?.thumbnail_url) {
+              // Cache in DB
+              supabase.from('instagram_posts').update({ thumbnail_url: data.thumbnail_url }).eq('id', post.id).then();
+              return { ...post, thumbnail_url: data.thumbnail_url };
+            }
+          } catch {}
+          return post;
+        })
+      );
+      setInstaPosts(enriched);
     };
     load();
   }, []);
