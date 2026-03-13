@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, X } from 'lucide-react';
-import logoRadio from '@/assets/logo-radio-tvg.png';
+import logoRadio from '@/assets/logo-radio-tvg-new.jpg';
 
 const DISMISS_KEY = 'pwa_install_dismissed';
 
