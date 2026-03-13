@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Headphones, Loader2 } from 'lucide-react';
 import { useRadioStore, StreamEnvironment } from '@/stores/useRadioStore';
-import logoRadio from '@/assets/logo-radio-tvg.png';
+import logoRadio from '@/assets/logo-radio-tvg-new.jpg';
 import { supabase } from '@/integrations/supabase/client';
 
 const DAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
