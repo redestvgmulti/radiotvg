@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Pause, Headphones, Calendar, ChevronRight, Volume2, VolumeX, MessageCircle } from 'lucide-react';
+import { Play, Pause, Headphones, Calendar, ChevronRight, Volume2, VolumeX, MessageCircle, Instagram } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import EnvironmentSelector from '@/components/EnvironmentSelector';
 import AdDisplay from '@/components/AdDisplay';
@@ -39,18 +39,39 @@ const AudioTab = () => {
 
   const [programs, setPrograms] = useState<Program[]>([]);
   const [whatsappNumber, setWhatsappNumber] = useState<string | null>(null);
+  const [instaPosts, setInstaPosts] = useState<{ id: string; post_url: string }[]>([]);
+  const [instaLoaded, setInstaLoaded] = useState(false);
 
   useEffect(() => {
     const load = async () => {
-      const [progsRes, wpRes] = await Promise.all([
+      const [progsRes, wpRes, instaRes] = await Promise.all([
         supabase.from('programs').select('*').eq('is_active', true).order('day_of_week').order('start_time'),
         supabase.from('radio_settings').select('value').eq('key', 'whatsapp_number').maybeSingle(),
+        supabase.from('instagram_posts').select('id, post_url').eq('is_active', true).order('sort_order').limit(3),
       ]);
       setPrograms((progsRes.data as Program[]) || []);
       if (wpRes.data?.value) setWhatsappNumber(wpRes.data.value);
+      setInstaPosts((instaRes.data as any[]) || []);
     };
     load();
   }, []);
+
+  // Load Instagram embed script
+  useEffect(() => {
+    if (instaPosts.length > 0 && !instaLoaded) {
+      const script = document.createElement('script');
+      script.src = 'https://www.instagram.com/embed.js';
+      script.async = true;
+      script.onload = () => {
+        setInstaLoaded(true);
+        (window as any).instgrm?.Embeds?.process();
+      };
+      document.body.appendChild(script);
+      return () => { document.body.removeChild(script); };
+    } else if (instaPosts.length > 0 && instaLoaded) {
+      setTimeout(() => (window as any).instgrm?.Embeds?.process(), 100);
+    }
+  }, [instaPosts, instaLoaded]);
 
   const now = new Date();
   const currentDay = now.getDay();
@@ -249,6 +270,32 @@ const AudioTab = () => {
                   <p className="text-muted-foreground text-[11px]">com {prog.host}</p>
                 </div>
               </motion.div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ===== INSTAGRAM ===== */}
+      {instaPosts.length > 0 && (
+        <section className="px-4 mt-8 mb-4">
+          <div className="flex items-center gap-2 mb-4 px-1">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 via-pink-500 to-purple-600 flex items-center justify-center">
+              <Instagram className="h-3.5 w-3.5 text-white" />
+            </div>
+            <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em]">
+              Acompanhe a gente no Instagram
+            </h2>
+          </div>
+          <div className="space-y-4">
+            {instaPosts.map((post) => (
+              <div key={post.id} className="rounded-2xl overflow-hidden border border-border bg-card">
+                <blockquote
+                  className="instagram-media"
+                  data-instgrm-captioned
+                  data-instgrm-permalink={post.post_url}
+                  style={{ width: '100%', margin: 0, border: 0, padding: 0 }}
+                />
+              </div>
             ))}
           </div>
         </section>
