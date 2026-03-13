@@ -286,14 +286,14 @@ const AudioTab = () => {
               Acompanhe a gente no Instagram
             </h2>
           </div>
-          <div className="space-y-4">
+          <div className="grid grid-cols-3 gap-3">
             {instaPosts.map((post) => (
-              <div key={post.id} className="rounded-2xl overflow-hidden border border-border bg-card">
+              <div key={post.id} className="rounded-xl overflow-hidden border border-border bg-card min-w-0">
                 <blockquote
                   className="instagram-media"
                   data-instgrm-captioned
                   data-instgrm-permalink={post.post_url}
-                  style={{ width: '100%', margin: 0, border: 0, padding: 0 }}
+                  style={{ width: '100%', margin: 0, border: 0, padding: 0, minWidth: 0 }}
                 />
               </div>
             ))}
