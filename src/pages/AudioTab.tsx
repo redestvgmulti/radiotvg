@@ -42,8 +42,12 @@ const AudioTab = () => {
 
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase.from('programs').select('*').eq('is_active', true).order('day_of_week').order('start_time');
-      setPrograms((data as Program[]) || []);
+      const [progsRes, wpRes] = await Promise.all([
+        supabase.from('programs').select('*').eq('is_active', true).order('day_of_week').order('start_time'),
+        supabase.from('radio_settings').select('value').eq('key', 'whatsapp_number').maybeSingle(),
+      ]);
+      setPrograms((progsRes.data as Program[]) || []);
+      if (wpRes.data?.value) setWhatsappNumber(wpRes.data.value);
     };
     load();
   }, []);
