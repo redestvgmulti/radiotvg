@@ -265,7 +265,7 @@ const AudioTab = () => {
               <Instagram className="h-3.5 w-3.5 text-white" />
             </div>
             <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em]">
-              Instagram
+              Siga a @tvgmulti
             </h2>
           </div>
           <div className="flex gap-2.5 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide -mx-4 px-4">
