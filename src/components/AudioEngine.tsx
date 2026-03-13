@@ -76,6 +76,7 @@ const AudioEngine = () => {
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const hlsRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userInitiatedPauseRef = useRef(false);
+  const isRetryingRef = useRef(false);
 
   const {
     isPlaying, volume, getCurrentStreamUrl, getCurrentEnvironment,
