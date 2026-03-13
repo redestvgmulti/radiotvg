@@ -92,6 +92,8 @@ const AdminAds = () => {
   const [createForm, setCreateForm] = useState({ name: '', media_url: '', media_type: 'image', link_url: '', display_duration: 15, station_ids: [] as string[] });
   const [creating, setCreating] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
+  const [headerLogoUrl, setHeaderLogoUrl] = useState('');
+  const [savingLogo, setSavingLogo] = useState(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -99,13 +101,28 @@ const AdminAds = () => {
   useEffect(() => { fetchAll(); }, []);
 
   const fetchAll = async () => {
-    const [adsRes, stationsRes] = await Promise.all([
+    const [adsRes, stationsRes, logoRes] = await Promise.all([
       supabase.from('ads').select('*').order('sort_order').order('created_at'),
       supabase.from('stream_environments').select('id, label').order('sort_order'),
+      supabase.from('radio_settings').select('value').eq('key', 'header_logo_url').maybeSingle(),
     ]);
     setAds((adsRes.data as Ad[]) || []);
     setStations((stationsRes.data as Station[]) || []);
+    if (logoRes.data?.value) setHeaderLogoUrl(logoRes.data.value);
     setLoading(false);
+  };
+
+  const saveHeaderLogo = async (url: string) => {
+    setSavingLogo(true);
+    const { data: existing } = await supabase.from('radio_settings').select('id').eq('key', 'header_logo_url').maybeSingle();
+    if (existing) {
+      await supabase.from('radio_settings').update({ value: url }).eq('key', 'header_logo_url');
+    } else {
+      await supabase.from('radio_settings').insert({ key: 'header_logo_url', value: url, label: 'Logo do Topo', category: 'appearance' });
+    }
+    setHeaderLogoUrl(url);
+    setSavingLogo(false);
+    toast({ title: 'Logo do topo atualizada!' });
   };
 
   const uploadMedia = async (file: File, key: string): Promise<string | null> => {
