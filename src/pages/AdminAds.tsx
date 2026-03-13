@@ -203,7 +203,27 @@ const AdminAds = () => {
         </button>
       </div>
 
-      <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 py-6 space-y-3">
+      <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 py-6 space-y-5">
+        {/* === TOPO — Header Logo === */}
+        <div className="rounded-xl bg-white border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-4 space-y-3">
+          <p className="text-xs font-semibold text-slate-700">🔝 Topo</p>
+          <p className="text-[10px] text-slate-400">Imagem fixa exibida no cabeçalho do app. Tamanho recomendado: <strong>1200 × 200 px</strong></p>
+          <ImageUploadField
+            mediaUrl={headerLogoUrl}
+            onUrlChange={async (url) => {
+              if (url) await saveHeaderLogo(url);
+              else { setHeaderLogoUrl(''); }
+            }}
+            uploadKey="header-logo"
+            uploading={uploading}
+            onUpload={uploadMedia}
+            label="Logo do Topo (1200×200)"
+          />
+          {savingLogo && <div className="flex items-center gap-1.5 text-[10px] text-slate-400"><Loader2 className="h-3 w-3 animate-spin" /> Salvando...</div>}
+        </div>
+
+        {/* === Separator === */}
+        <div className="border-t border-slate-200" />
         <AnimatePresence>
           {showCreate && (
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
