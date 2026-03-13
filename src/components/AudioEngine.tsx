@@ -76,6 +76,7 @@ const AudioEngine = () => {
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const hlsRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userInitiatedPauseRef = useRef(false);
+  const isRetryingRef = useRef(false);
 
   const {
     isPlaying, volume, getCurrentStreamUrl, getCurrentEnvironment,
@@ -296,7 +297,7 @@ const AudioEngine = () => {
 
       // System interruption detection (phone calls, Siri) — stop playback
       const onInterruptPause = () => {
-        if (isPlayingRef.current && !userInitiatedPauseRef.current) {
+        if (isPlayingRef.current && !userInitiatedPauseRef.current && !isRetryingRef.current && !audio.error) {
           logAudioState('System interruption detected (native)', 'stopping playback');
           setPlaying(false);
         }
@@ -426,18 +427,22 @@ const AudioEngine = () => {
         const onDirectError = () => {
           logAudioState('Direct stream error', 'will retry in 10s');
           setStreamError('Reconectando ao stream...');
+          isRetryingRef.current = true;
           hlsRetryTimeoutRef.current = setTimeout(() => {
             logAudioState('Direct stream retry', 'reassigning source');
+            isRetryingRef.current = false;
             audio.src = sanitizedUrl;
             setStreamError(null);
-            if (isPlayingRef.current) audio.play().catch(() => {});
+            // Force playing state so retry can work
+            if (!isPlayingRef.current) setPlaying(true);
+            audio.play().catch(() => {});
           }, 10000);
         };
         audio.addEventListener('error', onDirectError);
 
         // System interruption detection (phone calls) — stop playback
         const onDirectPause = () => {
-          if (isPlayingRef.current && !userInitiatedPauseRef.current) {
+          if (isPlayingRef.current && !userInitiatedPauseRef.current && !isRetryingRef.current && !audio.error) {
             logAudioState('System interruption detected (direct)', 'stopping playback');
             setPlaying(false);
           }
