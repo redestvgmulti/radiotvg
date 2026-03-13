@@ -133,14 +133,41 @@ const AdminPush = () => {
   const [linkUrl, setLinkUrl] = useState('');
   const [target, setTarget] = useState('all');
   const [history, setHistory] = useState<PushRecord[]>([]);
+  const [historyPage, setHistoryPage] = useState(0);
+  const [historyTotal, setHistoryTotal] = useState(0);
+  const [resending, setResending] = useState<string | null>(null);
+  const PAGE_SIZE = 10;
 
-  const fetchHistory = async () => {
-    const { data } = await supabase
+  const fetchHistory = async (page = 0) => {
+    const from = page * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+    const { data, count } = await supabase
       .from('push_history')
-      .select('id, title, message, target, recipients, status, created_at')
+      .select('id, title, message, target, recipients, status, created_at', { count: 'exact' })
       .order('created_at', { ascending: false })
-      .limit(30);
+      .range(from, to);
     if (data) setHistory(data as PushRecord[]);
+    if (count !== null) setHistoryTotal(count);
+    setHistoryPage(page);
+  };
+
+  const handleResend = async (h: PushRecord) => {
+    if (!confirm(`Reenviar "${h.title}" para ${TARGET_LABELS[h.target] || h.target}?`)) return;
+    setResending(h.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-push', {
+        body: { title: h.title, message: h.message, target: h.target },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: '🚀 Push reenviada!', description: `${data?.recipients || 0} destinatário(s).` });
+      await fetchHistory(historyPage);
+    } catch (err: any) {
+      toast({ title: 'Erro ao reenviar', description: err.message, variant: 'destructive' });
+      await fetchHistory(historyPage);
+    } finally {
+      setResending(null);
+    }
   };
 
   useEffect(() => {
