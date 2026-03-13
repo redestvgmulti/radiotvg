@@ -33,6 +33,7 @@ const AdminPrograms = lazy(() => import("./pages/AdminPrograms"));
 const AdminRewards = lazy(() => import("./pages/AdminRewards"));
 const AdminBoosters = lazy(() => import("./pages/AdminBoosters"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
+const AdminVouchers = lazy(() => import("./pages/AdminVouchers"));
 
 const queryClient = new QueryClient();
 
