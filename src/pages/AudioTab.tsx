@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Pause, Headphones, Calendar, ChevronRight, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, Headphones, Calendar, ChevronRight, Volume2, VolumeX, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import EnvironmentSelector from '@/components/EnvironmentSelector';
 import AdDisplay from '@/components/AdDisplay';
@@ -38,11 +38,16 @@ const AudioTab = () => {
   const navigate = useNavigate();
 
   const [programs, setPrograms] = useState<Program[]>([]);
+  const [whatsappNumber, setWhatsappNumber] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase.from('programs').select('*').eq('is_active', true).order('day_of_week').order('start_time');
-      setPrograms((data as Program[]) || []);
+      const [progsRes, wpRes] = await Promise.all([
+        supabase.from('programs').select('*').eq('is_active', true).order('day_of_week').order('start_time'),
+        supabase.from('radio_settings').select('value').eq('key', 'whatsapp_number').maybeSingle(),
+      ]);
+      setPrograms((progsRes.data as Program[]) || []);
+      if (wpRes.data?.value) setWhatsappNumber(wpRes.data.value);
     };
     load();
   }, []);
@@ -204,6 +209,22 @@ const AudioTab = () => {
       <section className="px-4 mt-6">
         <AdDisplay />
       </section>
+
+      {/* ===== WHATSAPP BUTTON ===== */}
+      {whatsappNumber && (
+        <section className="px-4 mt-6 flex justify-center">
+          <motion.a
+            href={`https://wa.me/${whatsappNumber}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            whileTap={{ scale: 0.96 }}
+            className="inline-flex items-center gap-2.5 px-6 py-3 rounded-full bg-[#25D366]/10 border border-[#25D366]/20 hover:bg-[#25D366]/20 transition-colors"
+          >
+            <MessageCircle className="h-4.5 w-4.5 text-[#25D366]" />
+            <span className="text-sm font-semibold text-[#25D366]">Participar no WhatsApp</span>
+          </motion.a>
+        </section>
+      )}
 
       {/* ===== PRÓXIMOS PROGRAMAS ===== */}
       {upcoming.length > 0 && (
