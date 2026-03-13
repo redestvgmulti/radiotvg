@@ -1,0 +1,287 @@
+import { useState, useEffect, useCallback } from 'react';
+import { ArrowLeft, Bell, Save, Loader2, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+
+const inputClass = "w-full h-9 px-3 rounded-lg bg-white border border-slate-200 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-colors";
+const textareaClass = "w-full px-3 py-2 rounded-lg bg-white border border-slate-200 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-colors resize-none";
+const selectClass = "w-full h-9 px-3 rounded-lg bg-white border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-colors appearance-none";
+
+const FREQUENCY_OPTIONS = [
+  { value: 'once', label: 'Enviar apenas uma vez', desc: 'Recomendado para avisos pontuais' },
+  { value: 'daily', label: 'Diariamente', desc: 'Máx. 1x ao dia — use com moderação' },
+  { value: 'weekly', label: 'Semanalmente', desc: 'Recomendado — bom equilíbrio de engajamento' },
+  { value: 'biweekly', label: 'A cada 2 semanas', desc: 'Ideal para promoções e novidades' },
+  { value: 'monthly', label: 'Mensalmente', desc: 'Baixa frequência, maior retenção' },
+];
+
+interface DropZoneProps {
+  label: string;
+  dimensions: string;
+  value: string;
+  onChange: (url: string) => void;
+  bucket: string;
+  folder: string;
+}
+
+const DropZone = ({ label, dimensions, value, onChange, bucket, folder }: DropZoneProps) => {
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const { toast } = useToast();
+
+  const handleFile = useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Apenas imagens são permitidas', variant: 'destructive' });
+      return;
+    }
+    setUploading(true);
+    const ext = file.name.split('.').pop();
+    const path = `${folder}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from(bucket).upload(path, file, { upsert: true });
+    if (error) {
+      toast({ title: 'Erro ao enviar', description: error.message, variant: 'destructive' });
+      setUploading(false);
+      return;
+    }
+    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
+    onChange(urlData.publicUrl);
+    setUploading(false);
+  }, [bucket, folder, onChange, toast]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFile(file);
+  }, [handleFile]);
+
+  return (
+    <div className="space-y-2">
+      <label className="text-xs font-semibold text-slate-700 block">{label}</label>
+      <p className="text-[10px] text-slate-400">Dimensões recomendadas: <span className="font-semibold text-slate-500">{dimensions}</span></p>
+      {value ? (
+        <div className="relative rounded-lg overflow-hidden border border-slate-200 bg-slate-50">
+          <img src={value} alt={label} className="w-full h-32 object-contain bg-white" />
+          <button onClick={() => onChange('')} className="absolute top-2 right-2 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors">
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      ) : (
+        <div
+          onDrop={handleDrop}
+          onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          className={`relative rounded-lg border-2 border-dashed p-6 flex flex-col items-center gap-2 transition-colors cursor-pointer ${
+            dragOver ? 'border-blue-400 bg-blue-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300'
+          }`}
+        >
+          {uploading ? (
+            <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+          ) : (
+            <>
+              <Upload className="h-6 w-6 text-slate-300" />
+              <p className="text-xs text-slate-400">Arraste uma imagem ou clique para enviar</p>
+              <p className="text-[10px] text-slate-300">{dimensions}</p>
+            </>
+          )}
+          <input
+            type="file"
+            accept="image/*"
+            className="absolute inset-0 opacity-0 cursor-pointer"
+            onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+const AdminPush = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [title, setTitle] = useState('');
+  const [message, setMessage] = useState('');
+  const [iconUrl, setIconUrl] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [frequency, setFrequency] = useState('weekly');
+  const [linkUrl, setLinkUrl] = useState('');
+
+  useEffect(() => {
+    const fetch = async () => {
+      const { data } = await supabase
+        .from('radio_settings')
+        .select('key, value')
+        .in('key', ['push_title', 'push_message', 'push_icon_url', 'push_image_url', 'push_frequency', 'push_link_url']);
+      if (data) {
+        data.forEach(r => {
+          if (r.key === 'push_title') setTitle(r.value);
+          if (r.key === 'push_message') setMessage(r.value);
+          if (r.key === 'push_icon_url') setIconUrl(r.value);
+          if (r.key === 'push_image_url') setImageUrl(r.value);
+          if (r.key === 'push_frequency') setFrequency(r.value);
+          if (r.key === 'push_link_url') setLinkUrl(r.value);
+        });
+      }
+      setLoading(false);
+    };
+    fetch();
+  }, []);
+
+  const handleSave = async () => {
+    if (!title.trim()) return toast({ title: 'Título obrigatório', variant: 'destructive' });
+    if (!message.trim()) return toast({ title: 'Mensagem obrigatória', variant: 'destructive' });
+
+    setSaving(true);
+    const settings = [
+      { key: 'push_title', value: title, label: 'Título da Push', category: 'push' },
+      { key: 'push_message', value: message, label: 'Mensagem da Push', category: 'push' },
+      { key: 'push_icon_url', value: iconUrl, label: 'Ícone da Push', category: 'push' },
+      { key: 'push_image_url', value: imageUrl, label: 'Imagem da Push', category: 'push' },
+      { key: 'push_frequency', value: frequency, label: 'Frequência da Push', category: 'push' },
+      { key: 'push_link_url', value: linkUrl, label: 'Link da Push', category: 'push' },
+    ];
+
+    for (const s of settings) {
+      const { data: existing } = await supabase.from('radio_settings').select('id').eq('key', s.key).maybeSingle();
+      if (existing) {
+        await supabase.from('radio_settings').update({ value: s.value }).eq('key', s.key);
+      } else {
+        await supabase.from('radio_settings').insert(s);
+      }
+    }
+
+    setSaving(false);
+    toast({ title: 'Configuração de push salva!' });
+  };
+
+  const selectedFreq = FREQUENCY_OPTIONS.find(f => f.value === frequency);
+
+  return (
+    <>
+      {/* Header */}
+      <div className="flex items-center gap-3 px-5 py-3.5 bg-white border-b border-slate-200 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+        <button onClick={() => navigate('/admin/dashboard')} className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors">
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+        <div className="flex items-center gap-2.5 flex-1">
+          <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center shadow-sm">
+            <Bell className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <h1 className="text-sm font-bold text-slate-800">Mensagem Push</h1>
+            <p className="text-[10px] text-slate-400">Configurar notificações push</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 py-6 space-y-5">
+        {loading ? (
+          <div className="flex justify-center py-10">
+            <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+          </div>
+        ) : (
+          <>
+            {/* Title & Message */}
+            <div className="rounded-xl bg-white border border-slate-100 shadow-sm p-5 space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-700 block">Título da notificação</label>
+                <input value={title} onChange={e => setTitle(e.target.value)} placeholder="🎵 Novidade na Rádio TVG!" className={inputClass} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-700 block">Mensagem</label>
+                <textarea value={message} onChange={e => setMessage(e.target.value)} placeholder="Não perca nosso programa especial hoje às 20h!" rows={3} className={textareaClass} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-700 block">Link ao clicar (opcional)</label>
+                <p className="text-[10px] text-slate-400 -mt-1">URL aberta ao clicar na notificação. Deixe vazio para abrir o app.</p>
+                <input value={linkUrl} onChange={e => setLinkUrl(e.target.value)} placeholder="https://radiotvg.lovable.app" className={inputClass} />
+              </div>
+            </div>
+
+            {/* Images */}
+            <div className="rounded-xl bg-white border border-slate-100 shadow-sm p-5 space-y-5">
+              <div className="flex items-center gap-2 mb-1">
+                <ImageIcon className="h-4 w-4 text-slate-400" />
+                <span className="text-xs font-semibold text-slate-700">Imagens</span>
+              </div>
+
+              <DropZone
+                label="Ícone da notificação"
+                dimensions="192 × 192 px (quadrado, PNG)"
+                value={iconUrl}
+                onChange={setIconUrl}
+                bucket="radio-assets"
+                folder="push-icons"
+              />
+
+              <DropZone
+                label="Imagem grande (banner)"
+                dimensions="720 × 360 px (2:1, PNG ou JPG)"
+                value={imageUrl}
+                onChange={setImageUrl}
+                bucket="radio-assets"
+                folder="push-images"
+              />
+            </div>
+
+            {/* Frequency */}
+            <div className="rounded-xl bg-white border border-slate-100 shadow-sm p-5 space-y-3">
+              <label className="text-xs font-semibold text-slate-700 block">Frequência de envio</label>
+              <p className="text-[10px] text-slate-400 -mt-1">
+                ⚡ Boas práticas: enviar no máximo 1 push por semana para evitar desinscrições.
+              </p>
+              <select value={frequency} onChange={e => setFrequency(e.target.value)} className={selectClass}>
+                {FREQUENCY_OPTIONS.map(f => (
+                  <option key={f.value} value={f.value}>{f.label}</option>
+                ))}
+              </select>
+              {selectedFreq && (
+                <p className="text-[10px] text-slate-500 bg-slate-50 rounded-lg px-3 py-2">
+                  💡 {selectedFreq.desc}
+                </p>
+              )}
+            </div>
+
+            {/* Preview */}
+            <div className="rounded-xl bg-slate-50 border border-slate-100 p-5 space-y-3">
+              <label className="text-xs font-semibold text-slate-700 block">Pré-visualização</label>
+              <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                <div className="flex items-start gap-3">
+                  {iconUrl ? (
+                    <img src={iconUrl} alt="icon" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                      <Bell className="h-5 w-5 text-slate-300" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-slate-800">{title || 'Título da notificação'}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{message || 'Mensagem da notificação'}</p>
+                  </div>
+                </div>
+                {imageUrl && (
+                  <img src={imageUrl} alt="push banner" className="w-full h-32 object-cover rounded-lg mt-3" />
+                )}
+              </div>
+            </div>
+
+            {/* Save */}
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="w-full h-10 rounded-lg bg-indigo-500 text-white font-semibold text-sm flex items-center justify-center gap-2 hover:bg-indigo-600 transition-colors shadow-sm disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Salvar configuração
+            </button>
+          </>
+        )}
+      </div>
+    </>
+  );
+};
+
+export default AdminPush;
