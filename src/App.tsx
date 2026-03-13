@@ -34,6 +34,7 @@ const AdminRewards = lazy(() => import("./pages/AdminRewards"));
 const AdminBoosters = lazy(() => import("./pages/AdminBoosters"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const AdminVouchers = lazy(() => import("./pages/AdminVouchers"));
+const AdminInstagram = lazy(() => import("./pages/AdminInstagram"));
 
 const queryClient = new QueryClient();
 
