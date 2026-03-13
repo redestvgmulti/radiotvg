@@ -399,6 +399,59 @@ const AdminPush = () => {
                 Salvar configuração
               </button>
             </div>
+
+            {/* Push History */}
+            <div className="rounded-xl bg-white border border-slate-100 shadow-sm p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <History className="h-4 w-4 text-slate-400" />
+                <span className="text-xs font-semibold text-slate-700">Histórico de envios</span>
+                <span className="text-[10px] text-slate-400 ml-auto">{history.length} registro(s)</span>
+              </div>
+
+              {history.length === 0 ? (
+                <div className="text-center py-8">
+                  <Bell className="h-6 w-6 text-slate-200 mx-auto mb-2" />
+                  <p className="text-xs text-slate-400">Nenhum envio registrado ainda.</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {history.map(h => (
+                    <div key={h.id} className="flex items-start gap-3 px-3 py-2.5 rounded-lg border border-slate-100 bg-slate-50/50">
+                      <div className="mt-0.5">
+                        {h.status === 'sent' ? (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-red-500" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-slate-700 truncate">{h.title}</p>
+                        <p className="text-[11px] text-slate-500 truncate">{h.message}</p>
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                            <Users className="h-2.5 w-2.5" />
+                            {TARGET_LABELS[h.target] || h.target}
+                          </span>
+                          <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                            <Send className="h-2.5 w-2.5" />
+                            {h.recipients} destinatário(s)
+                          </span>
+                          <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                            <Clock className="h-2.5 w-2.5" />
+                            {new Date(h.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </div>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        h.status === 'sent' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      }`}>
+                        {h.status === 'sent' ? 'Enviado' : 'Falhou'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
