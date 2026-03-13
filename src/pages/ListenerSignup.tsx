@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, Loader2, ArrowLeft, User } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import logoRadio from '@/assets/logo-radio-tvg-new.jpg';
+import logoRadio from '@/assets/logo-radio-tvg-new.png';
 
 const ListenerSignup = () => {
   const [displayName, setDisplayName] = useState('');

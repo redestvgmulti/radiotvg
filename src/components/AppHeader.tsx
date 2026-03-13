@@ -1,4 +1,4 @@
-import logoRadio from '@/assets/logo-radio-tvg-new.jpg';
+import logoRadio from '@/assets/logo-radio-tvg-new.png';
 
 const AppHeader = () => {
   return (

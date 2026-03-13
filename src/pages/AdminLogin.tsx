@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Lock, Mail, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import logoRadio from '@/assets/logo-radio-tvg-new.jpg';
+import logoRadio from '@/assets/logo-radio-tvg-new.png';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
