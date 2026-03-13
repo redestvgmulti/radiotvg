@@ -271,7 +271,7 @@ const AudioTab = () => {
           <div className="flex gap-2.5 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide -mx-4 px-4">
             {instaPosts.map((post, i) => {
               const cleanUrl = post.post_url.split('?')[0].replace(/\/+$/, '');
-              const embedUrl = `${cleanUrl}/embed/captioned/`;
+              const embedUrl = `${cleanUrl}/embed/`;
               return (
                 <motion.div
                   key={post.id}
@@ -283,7 +283,7 @@ const AudioTab = () => {
                   <iframe
                     src={embedUrl}
                     className="w-full border-0"
-                    style={{ height: 340 }}
+                    style={{ height: 420 }}
                     scrolling="no"
                     allowTransparency
                     loading="lazy"
