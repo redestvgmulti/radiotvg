@@ -100,24 +100,20 @@ const AudioTab = () => {
         <div className="relative z-10 px-5 pt-5 pb-8">
           {/* Hero content */}
           <div className="flex flex-col items-center text-center">
-            {/* Ao Vivo badge */}
-            <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="mb-5">
-              <span className="inline-flex items-center gap-2 bg-red-600/90 backdrop-blur-sm px-4 py-1.5 rounded-full shadow-[0_0_20px_rgba(220,38,38,0.4)] border border-red-500/30">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
-                </span>
-                <span className="text-white text-xs font-bold uppercase tracking-widest">Ao Vivo</span>
-              </span>
-            </motion.div>
-
             <motion.h1
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-foreground leading-tight mb-1"
+              className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-foreground leading-tight mb-1 flex items-center justify-center gap-2.5"
             >
-              {nowPlaying?.name || env?.label || 'Rádio TVG'}
+              <span>{nowPlaying?.name || env?.label || 'Rádio TVG'}</span>
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-live/15 border border-live/20">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-live opacity-75" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-live" />
+                </span>
+                <span className="text-[9px] font-bold tracking-[0.15em] text-live uppercase">LIVE</span>
+              </span>
             </motion.h1>
 
             {nowPlaying && (
@@ -129,40 +125,6 @@ const AudioTab = () => {
             <p className="text-muted-foreground text-xs mb-6">
               {env?.description || 'Transmissão Contínua'}
             </p>
-
-            {/* Play button + equalizer */}
-            <div className="flex items-center gap-5 mb-6">
-              <div className="flex items-end gap-[2px] h-8 opacity-60">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <motion.div key={`l-${i}`} className="w-[2.5px] rounded-full bg-primary"
-                    animate={{ height: isPlaying ? [3, 12 + Math.random() * 16, 6, 18 + Math.random() * 10, 3] : 3 }}
-                    transition={{ duration: 1.1 + Math.random() * 0.5, repeat: Infinity, repeatType: 'reverse', delay: i * 0.06 }} />
-                ))}
-              </div>
-
-              <motion.button whileTap={{ scale: 0.9 }} onClick={togglePlay} disabled={!streamUrl}
-                className="w-20 h-20 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-[0_0_40px_hsl(var(--primary)/0.4)] hover:shadow-[0_0_60px_hsl(var(--primary)/0.5)] transition-all duration-300 disabled:opacity-40 disabled:shadow-none">
-                {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8 ml-1" />}
-              </motion.button>
-
-              <div className="flex items-end gap-[2px] h-8 opacity-60">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <motion.div key={`r-${i}`} className="w-[2.5px] rounded-full bg-accent"
-                    animate={{ height: isPlaying ? [3, 14 + Math.random() * 14, 5, 20 + Math.random() * 8, 3] : 3 }}
-                    transition={{ duration: 1.3 + Math.random() * 0.4, repeat: Infinity, repeatType: 'reverse', delay: i * 0.05 }} />
-                ))}
-              </div>
-            </div>
-
-            {isBuffering && isPlaying && (
-              <p className="text-accent text-[10px] mt-1 animate-pulse">Carregando stream...</p>
-            )}
-
-            {/* Now playing track info */}
-            <div className="mt-2 text-center max-w-[80%]">
-              <p className="text-foreground font-semibold text-sm truncate">{currentTrack.title}</p>
-              <p className="text-muted-foreground text-xs truncate">{currentTrack.artist}</p>
-            </div>
 
             {/* Volume control */}
             <div className="flex items-center gap-3 mt-4 w-full max-w-[240px]">
@@ -184,24 +146,18 @@ const AudioTab = () => {
       </section>
 
 
-      {/* ===== NO AR AGORA ===== */}
-      {nowPlaying && (
+      {/* ===== TOCANDO AGORA ===== */}
+      {(currentTrack.title || currentTrack.artist) && (
         <section className="px-4 mt-6">
-          <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] mb-3 px-1">Ao Vivo Agora</h2>
+          <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] mb-3 px-1">Tocando Agora</h2>
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             className="flex items-center gap-4 p-4 rounded-2xl bg-card border border-white/[0.06] card-glow">
             <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/30 to-accent/20 flex items-center justify-center flex-shrink-0">
               <Headphones className="h-6 w-6 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="text-foreground font-display font-bold text-base truncate">{nowPlaying.name}</p>
-                <span className="flex-shrink-0 w-2 h-2 rounded-full bg-live animate-pulse" />
-              </div>
-              <p className="text-muted-foreground text-xs mt-0.5">com {nowPlaying.host}</p>
-              <p className="text-muted-foreground/60 text-[10px] mt-0.5">
-                {nowPlaying.start_time.slice(0, 5)} – {nowPlaying.end_time.slice(0, 5)}
-              </p>
+              <p className="text-foreground font-display font-bold text-base truncate">{currentTrack.title}</p>
+              <p className="text-muted-foreground text-xs mt-0.5">{currentTrack.artist}</p>
             </div>
             <motion.button whileTap={{ scale: 0.9 }} onClick={togglePlay} disabled={!streamUrl}
               className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-[0_0_15px_hsl(var(--primary)/0.3)] disabled:opacity-40">
