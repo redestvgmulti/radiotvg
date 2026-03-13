@@ -45,6 +45,7 @@ const AdminDashboard = () => {
         { icon: Gift, label: 'Rewards', desc: 'Catálogo de recompensas', path: '/admin/rewards' },
         { icon: Zap, label: 'Boosters', desc: 'Multiplicadores de pontos', path: '/admin/boosters' },
         { icon: Ticket, label: 'Vouchers', desc: 'Gestão de vouchers', path: '/admin/vouchers' },
+        { icon: Instagram, label: 'Instagram', desc: 'Posts do Instagram na home', path: '/admin/instagram' },
       ],
     },
     {
