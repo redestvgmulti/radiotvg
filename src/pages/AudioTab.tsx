@@ -274,6 +274,32 @@ const AudioTab = () => {
           </div>
         </section>
       )}
+
+      {/* ===== INSTAGRAM ===== */}
+      {instaPosts.length > 0 && (
+        <section className="px-4 mt-8 mb-4">
+          <div className="flex items-center gap-2 mb-4 px-1">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 via-pink-500 to-purple-600 flex items-center justify-center">
+              <Instagram className="h-3.5 w-3.5 text-white" />
+            </div>
+            <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em]">
+              Acompanhe a gente no Instagram
+            </h2>
+          </div>
+          <div className="space-y-4">
+            {instaPosts.map((post) => (
+              <div key={post.id} className="rounded-2xl overflow-hidden border border-border bg-card">
+                <blockquote
+                  className="instagram-media"
+                  data-instgrm-captioned
+                  data-instgrm-permalink={post.post_url}
+                  style={{ width: '100%', margin: 0, border: 0, padding: 0 }}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </motion.div>
   );
 };
