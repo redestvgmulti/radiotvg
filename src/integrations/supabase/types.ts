@@ -87,6 +87,7 @@ export type Database = {
           is_active: boolean
           post_url: string
           sort_order: number
+          thumbnail_url: string | null
         }
         Insert: {
           created_at?: string
@@ -94,6 +95,7 @@ export type Database = {
           is_active?: boolean
           post_url: string
           sort_order?: number
+          thumbnail_url?: string | null
         }
         Update: {
           created_at?: string
@@ -101,6 +103,7 @@ export type Database = {
           is_active?: boolean
           post_url?: string
           sort_order?: number
+          thumbnail_url?: string | null
         }
         Relationships: []
       }

@@ -39,18 +39,37 @@ const AudioTab = () => {
 
   const [programs, setPrograms] = useState<Program[]>([]);
   const [whatsappNumber, setWhatsappNumber] = useState<string | null>(null);
-  const [instaPosts, setInstaPosts] = useState<{ id: string; post_url: string }[]>([]);
+  const [instaPosts, setInstaPosts] = useState<{ id: string; post_url: string; thumbnail_url: string | null }[]>([]);
 
   useEffect(() => {
     const load = async () => {
       const [progsRes, wpRes, instaRes] = await Promise.all([
         supabase.from('programs').select('*').eq('is_active', true).order('day_of_week').order('start_time'),
         supabase.from('radio_settings').select('value').eq('key', 'whatsapp_number').maybeSingle(),
-        supabase.from('instagram_posts').select('id, post_url').eq('is_active', true).order('sort_order').limit(3),
+        supabase.from('instagram_posts').select('id, post_url, thumbnail_url').eq('is_active', true).order('sort_order').limit(3),
       ]);
       setPrograms((progsRes.data as Program[]) || []);
       if (wpRes.data?.value) setWhatsappNumber(wpRes.data.value);
-      setInstaPosts((instaRes.data as any[]) || []);
+
+      const posts = (instaRes.data as any[]) || [];
+      // Fetch thumbnails for posts missing them
+      const enriched = await Promise.all(
+        posts.map(async (post) => {
+          if (post.thumbnail_url) return post;
+          try {
+            const { data } = await supabase.functions.invoke('instagram-thumbnail', {
+              body: { url: post.post_url },
+            });
+            if (data?.thumbnail_url) {
+              // Cache in DB
+              supabase.from('instagram_posts').update({ thumbnail_url: data.thumbnail_url }).eq('id', post.id).then();
+              return { ...post, thumbnail_url: data.thumbnail_url };
+            }
+          } catch {}
+          return post;
+        })
+      );
+      setInstaPosts(enriched);
     };
     load();
   }, []);
@@ -280,21 +299,25 @@ const AudioTab = () => {
                 transition={{ delay: i * 0.08 }}
                 className="group relative aspect-square rounded-xl overflow-hidden border border-border bg-card hover:border-primary/30 transition-all duration-300"
               >
-                {/* Gradient background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-pink-500/10 to-purple-600/10 group-hover:from-amber-500/20 group-hover:via-pink-500/20 group-hover:to-purple-600/20 transition-all duration-300" />
-                
+                {/* Thumbnail or gradient fallback */}
+                {post.thumbnail_url ? (
+                  <img src={post.thumbnail_url} alt="" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                ) : (
+                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-pink-500/10 to-purple-600/10" />
+                )}
+
+                {/* Overlay */}
+                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors duration-300" />
+
                 {/* Center icon */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 via-pink-500 to-purple-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                    <Instagram className="h-5 w-5 text-white" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 via-pink-500 to-purple-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <Instagram className="h-4 w-4 text-white" />
                   </div>
-                  <span className="text-[10px] font-semibold text-muted-foreground group-hover:text-foreground transition-colors flex items-center gap-1">
+                  <span className="text-[10px] font-semibold text-white/90 flex items-center gap-1">
                     Ver post <ExternalLink className="h-2.5 w-2.5" />
                   </span>
                 </div>
-
-                {/* Hover glow */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-t from-primary/5 to-transparent" />
               </motion.a>
             ))}
           </div>

@@ -1,0 +1,1 @@
+ALTER TABLE public.instagram_posts ADD COLUMN thumbnail_url text;
