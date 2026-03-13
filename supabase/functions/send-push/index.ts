@@ -12,7 +12,6 @@ serve(async (req) => {
   }
 
   try {
-    // Verify admin
     const authHeader = req.headers.get("authorization");
     if (!authHeader) throw new Error("Not authenticated");
 
@@ -48,14 +47,12 @@ serve(async (req) => {
       throw new Error("ONESIGNAL_REST_API_KEY not configured");
     }
 
-    // Build OneSignal payload
     const payload: Record<string, any> = {
       app_id: ONESIGNAL_APP_ID,
       headings: { en: title },
       contents: { en: message },
     };
 
-    // Target: "all" sends to all subscribed users
     if (target === "all" || !target) {
       payload.included_segments = ["Subscribed Users"];
     } else if (target === "active") {
@@ -64,7 +61,6 @@ serve(async (req) => {
       payload.included_segments = ["Inactive Users"];
     }
 
-    // Optional icon
     if (icon_url) {
       payload.chrome_web_icon = icon_url;
       payload.firefox_icon = icon_url;
@@ -72,18 +68,15 @@ serve(async (req) => {
       payload.large_icon = icon_url;
     }
 
-    // Optional big image
     if (image_url) {
       payload.chrome_web_image = image_url;
       payload.big_picture = image_url;
     }
 
-    // Optional link on click
     if (link_url) {
       payload.url = link_url;
     }
 
-    // Send via OneSignal REST API
     const response = await fetch("https://onesignal.com/api/v1/notifications", {
       method: "POST",
       headers: {
@@ -95,8 +88,30 @@ serve(async (req) => {
 
     const result = await response.json();
 
+    let status = "sent";
+    let errorMessage = "";
+
     if (!response.ok) {
-      throw new Error(result.errors?.[0] || JSON.stringify(result));
+      status = "failed";
+      errorMessage = result.errors?.[0] || JSON.stringify(result);
+    }
+
+    // Log to push_history
+    await supabaseAdmin.from("push_history").insert({
+      title,
+      message,
+      target: target || "all",
+      recipients: result.recipients || 0,
+      status,
+      onesignal_id: result.id || null,
+      icon_url: icon_url || "",
+      image_url: image_url || "",
+      link_url: link_url || "",
+      sent_by: user.id,
+    });
+
+    if (status === "failed") {
+      throw new Error(errorMessage);
     }
 
     return new Response(
