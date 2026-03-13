@@ -44,15 +44,34 @@ const AudioTab = () => {
 
   useEffect(() => {
     const load = async () => {
-      const [progsRes, wpRes] = await Promise.all([
+      const [progsRes, wpRes, instaRes] = await Promise.all([
         supabase.from('programs').select('*').eq('is_active', true).order('day_of_week').order('start_time'),
         supabase.from('radio_settings').select('value').eq('key', 'whatsapp_number').maybeSingle(),
+        supabase.from('instagram_posts').select('id, post_url').eq('is_active', true).order('sort_order').limit(3),
       ]);
       setPrograms((progsRes.data as Program[]) || []);
       if (wpRes.data?.value) setWhatsappNumber(wpRes.data.value);
+      setInstaPosts((instaRes.data as any[]) || []);
     };
     load();
   }, []);
+
+  // Load Instagram embed script
+  useEffect(() => {
+    if (instaPosts.length > 0 && !instaLoaded) {
+      const script = document.createElement('script');
+      script.src = 'https://www.instagram.com/embed.js';
+      script.async = true;
+      script.onload = () => {
+        setInstaLoaded(true);
+        (window as any).instgrm?.Embeds?.process();
+      };
+      document.body.appendChild(script);
+      return () => { document.body.removeChild(script); };
+    } else if (instaPosts.length > 0 && instaLoaded) {
+      setTimeout(() => (window as any).instgrm?.Embeds?.process(), 100);
+    }
+  }, [instaPosts, instaLoaded]);
 
   const now = new Date();
   const currentDay = now.getDay();
