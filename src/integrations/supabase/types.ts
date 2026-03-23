@@ -446,6 +446,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_admin_vouchers: {
+        Args: never
+        Returns: {
+          created_at: string
+          display_name: string
+          email: string
+          id: string
+          points_spent: number
+          protocol_number: string
+          redeemed_at: string
+          reward_name: string
+          status: string
+          voucher_code: string
+        }[]
+      }
       get_coupon_export: {
         Args: never
         Returns: {

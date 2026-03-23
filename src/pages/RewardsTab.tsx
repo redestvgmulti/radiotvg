@@ -26,6 +26,7 @@ const RewardsTab = () => {
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [userPoints, setUserPoints] = useState(0);
   const [ranking, setRanking] = useState<RankEntry[]>([]);
+  const [redeemedRewardIds, setRedeemedRewardIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [voucherModal, setVoucherModal] = useState<{ open: boolean; code: string; protocol: string; rewardName: string; points: number }>({ open: false, code: '', protocol: '', rewardName: '', points: 0 });
@@ -43,8 +44,14 @@ const RewardsTab = () => {
     setRanking((rankingRes.data as RankEntry[]) || []);
 
     if (user) {
-      const { data: profile } = await supabase.from('profiles').select('total_points').eq('user_id', user.id).single();
-      setUserPoints(profile?.total_points || 0);
+      const [profileRes, vouchersRes] = await Promise.all([
+        supabase.from('profiles').select('total_points').eq('user_id', user.id).single(),
+        supabase.from('vouchers').select('reward_id').eq('user_id', user.id)
+      ]);
+      setUserPoints(profileRes.data?.total_points || 0);
+      if (vouchersRes.data) {
+        setRedeemedRewardIds(new Set(vouchersRes.data.map(v => v.reward_id)));
+      }
     }
     setLoading(false);
   };
@@ -131,10 +138,16 @@ const RewardsTab = () => {
                       {r.partner && <p className="text-[10px] text-muted-foreground mt-0.5">{r.partner}</p>}
                       <div className="flex items-center justify-between mt-2">
                         <span className="text-xs font-bold text-primary">{r.points_cost} pts</span>
-                        <motion.button whileTap={{ scale: 0.95 }} onClick={() => handleRedeem(r)} disabled={redeeming === r.id}
-                          className="h-7 px-3 rounded-lg bg-primary text-primary-foreground text-[10px] font-bold disabled:opacity-60">
-                          {redeeming === r.id ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Trocar'}
-                        </motion.button>
+                        {redeemedRewardIds.has(r.id) ? (
+                          <span className="h-7 px-3 rounded-lg bg-green-500/10 text-green-600 text-[10px] font-bold flex items-center justify-center">
+                            Resgatado
+                          </span>
+                        ) : (
+                          <motion.button whileTap={{ scale: 0.95 }} onClick={() => handleRedeem(r)} disabled={redeeming === r.id}
+                            className="h-7 px-3 rounded-lg bg-primary text-primary-foreground text-[10px] font-bold disabled:opacity-60 flex items-center justify-center">
+                            {redeeming === r.id ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Trocar'}
+                          </motion.button>
+                        )}
                       </div>
                     </div>
                   </motion.div>

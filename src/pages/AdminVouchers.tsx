@@ -10,14 +10,13 @@ interface VoucherRow {
   id: string;
   protocol_number: string;
   voucher_code: string;
+  display_name: string;
+  email: string;
+  reward_name: string;
   points_spent: number;
   status: string;
   created_at: string;
   redeemed_at: string | null;
-  user_id: string;
-  reward_id: string;
-  profiles: { display_name: string } | null;
-  rewards: { name: string } | null;
 }
 
 const STATUS_LABELS: Record<string, { label: string; bg: string; text: string }> = {
@@ -36,16 +35,12 @@ const AdminVouchers = () => {
   const navigate = useNavigate();
 
   const fetchVouchers = async () => {
-    const { data, error } = await supabase
-      .from('vouchers')
-      .select('*, profiles!vouchers_user_id_fkey(display_name), rewards!vouchers_reward_id_fkey(name)')
-      .order('created_at', { ascending: false });
-
+    const { data, error } = await supabase.rpc('get_admin_vouchers');
     if (error) {
-      const { data: fallback } = await supabase.from('vouchers').select('*').order('created_at', { ascending: false });
-      setVouchers((fallback as any[])?.map(v => ({ ...v, profiles: null, rewards: null })) || []);
+      toast({ title: 'Erro ao carregar vouchers', description: error.message, variant: 'destructive' });
+      setVouchers([]);
     } else {
-      setVouchers((data as any[]) || []);
+      setVouchers((data as VoucherRow[]) || []);
     }
     setLoading(false);
   };
@@ -118,16 +113,19 @@ const AdminVouchers = () => {
                         <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${st.bg} ${st.text}`}>{st.label}</span>
                       </div>
                       <p className="text-[10px] text-slate-400 font-mono">{v.protocol_number}</p>
-                      <div className="flex items-center gap-3 text-[11px] text-slate-500">
-                        <span>{(v.profiles as any)?.display_name || 'Usuário'}</span>
-                        <span className="text-slate-300">•</span>
-                        <span>{(v.rewards as any)?.name || 'Recompensa'}</span>
-                        <span className="text-slate-300">•</span>
-                        <span>{v.points_spent} pts</span>
+                      <div className="flex flex-col gap-0.5 mt-1 border border-slate-100 rounded-lg p-2 bg-slate-50/50">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs">
+                           <span className="font-semibold text-slate-700">{v.display_name || 'Sem nome'}</span>
+                           <span className="text-slate-500 text-[10px]">{v.email || 'Email não disponível'}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 mt-1 border-t border-slate-100">
+                          <span className="font-medium text-slate-600 truncate">{v.reward_name || 'Recompensa Excluída'}</span>
+                          <span className="shrink-0 ml-2 font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">{v.points_spent} pts</span>
+                        </div>
                       </div>
-                      <p className="text-[10px] text-slate-400">
-                        {new Date(v.created_at).toLocaleDateString('pt-BR')}
-                        {v.redeemed_at && ` · Utilizado em ${new Date(v.redeemed_at).toLocaleDateString('pt-BR')}`}
+                      <p className="text-[10px] text-slate-400 pt-1">
+                        Gerado em {new Date(v.created_at).toLocaleString('pt-BR')}
+                        {v.redeemed_at && ` · Utilizado em ${new Date(v.redeemed_at).toLocaleString('pt-BR')}`}
                       </p>
                     </div>
 

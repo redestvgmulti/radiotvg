@@ -86,7 +86,19 @@ const AdminRewards = () => {
 
   const deleteReward = async (r: Reward) => {
     if (!confirm(`Excluir "${r.name}"?`)) return;
-    setSaving(r.id); await supabase.from('rewards').delete().eq('id', r.id); toast({ title: 'Excluído' }); fetchRewards(); setSaving(null);
+    setSaving(r.id); 
+    const { error } = await supabase.from('rewards').delete().eq('id', r.id); 
+    if (error) {
+      if (error.code === '23503' || error.message.includes('foreign key')) {
+        toast({ title: 'Exclusão Bloqueada', description: 'Esta recompensa possui vouchers gerados e não pode ser deletada para manter o histórico. Por favor, desative-a clicando no botão de ligar/desligar verde.', variant: 'destructive' });
+      } else {
+        toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      }
+    } else {
+      toast({ title: 'Excluído' }); 
+    }
+    fetchRewards(); 
+    setSaving(null);
   };
 
   return (
