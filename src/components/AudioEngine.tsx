@@ -295,19 +295,9 @@ const AudioEngine = () => {
       };
       audio.addEventListener('error', onNativeError);
 
-      // System interruption detection (phone calls, Siri) — stop playback
-      const onInterruptPause = () => {
-        if (isPlayingRef.current && !userInitiatedPauseRef.current && !isRetryingRef.current && !audio.error) {
-          logAudioState('System interruption detected (native)', 'stopping playback');
-          setPlaying(false);
-        }
-      };
-      audio.addEventListener('pause', onInterruptPause);
-
       // Store cleanup refs for this path
       const nativeCleanup = () => {
         audio.removeEventListener('error', onNativeError);
-        audio.removeEventListener('pause', onInterruptPause);
       };
       // Attach to audio element for cleanup in cleanupHls
       (audio as any).__nativeCleanup = nativeCleanup;
@@ -440,18 +430,8 @@ const AudioEngine = () => {
         };
         audio.addEventListener('error', onDirectError);
 
-        // System interruption detection (phone calls) — stop playback
-        const onDirectPause = () => {
-          if (isPlayingRef.current && !userInitiatedPauseRef.current && !isRetryingRef.current && !audio.error) {
-            logAudioState('System interruption detected (direct)', 'stopping playback');
-            setPlaying(false);
-          }
-        };
-        audio.addEventListener('pause', onDirectPause);
-
         (audio as any).__nativeCleanup = () => {
           audio.removeEventListener('error', onDirectError);
-          audio.removeEventListener('pause', onDirectPause);
         };
       }
     }
@@ -459,16 +439,57 @@ const AudioEngine = () => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const onWaiting = () => { setBuffering(true); logAudioState('audio waiting'); };
-    const onPlaying = () => { setBuffering(false); setStreamError(null); logAudioState('audio playing'); };
-    const onPause = () => logAudioState('audio pause');
-    const onStalled = () => logAudioState('audio stalled');
+    let stallRecoveryTimeout: ReturnType<typeof setTimeout> | null = null;
+    const clearStallRecovery = () => {
+      if (stallRecoveryTimeout) {
+        clearTimeout(stallRecoveryTimeout);
+        stallRecoveryTimeout = null;
+      }
+    };
+
+    const recoverStall = () => {
+      logAudioState('Stream stalled too long', 'forcing reconnect');
+      if (activeSourceType.current === 'hls' && hlsRef.current) {
+        hlsRef.current.startLoad();
+      } else if (audioRef.current && activeSourceType.current !== 'youtube') {
+        const currentSrc = audioRef.current.src;
+        audioRef.current.src = '';
+        setTimeout(() => {
+          if (audioRef.current) {
+            audioRef.current.src = currentSrc;
+            if (isPlayingRef.current) audioRef.current.play().catch(() => {});
+          }
+        }, 500);
+      }
+    };
+
+    const onWaiting = () => { 
+      setBuffering(true); 
+      logAudioState('audio waiting');
+      if (!stallRecoveryTimeout) stallRecoveryTimeout = setTimeout(recoverStall, 12000);
+    };
+    const onPlaying = () => { 
+      setBuffering(false); 
+      setStreamError(null); 
+      logAudioState('audio playing');
+      clearStallRecovery();
+    };
+    const onPause = () => {
+      logAudioState('audio pause');
+      if (!isPlayingRef.current) clearStallRecovery();
+    };
+    const onStalled = () => { 
+      logAudioState('audio stalled');
+      if (!stallRecoveryTimeout) stallRecoveryTimeout = setTimeout(recoverStall, 12000);
+    };
+
     audio.addEventListener('waiting', onWaiting);
     audio.addEventListener('playing', onPlaying);
     audio.addEventListener('pause', onPause);
     audio.addEventListener('stalled', onStalled);
 
     return () => {
+      clearStallRecovery();
       cleanupHls();
       audio.removeEventListener('waiting', onWaiting);
       audio.removeEventListener('playing', onPlaying);
