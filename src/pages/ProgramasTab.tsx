@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Headphones, Loader2 } from 'lucide-react';
 import { useRadioStore, StreamEnvironment } from '@/stores/useRadioStore';
-import logoRadio from '@/assets/logo-radio-tvg-new.png';
 import { supabase } from '@/integrations/supabase/client';
 
 const DAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
@@ -53,11 +52,7 @@ const ProgramasTab = () => {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="min-h-screen pb-36">
-      <header className="px-5 pt-5 pb-3">
-        <div className="h-10 flex items-center">
-          <img src={logoRadio} alt="Rádio TVG" className="h-full w-auto object-contain" />
-        </div>
-      </header>
+
 
       <div className="px-4 mb-4">
         <h1 className="text-lg font-display font-bold text-foreground mb-3">Programação</h1>
