@@ -1,6 +1,6 @@
 
 -- Create storage bucket for radio assets
-INSERT INTO storage.buckets (id, name, public) VALUES ('radio-assets', 'radio-assets', true);
+INSERT INTO storage.buckets (id, name, public) VALUES ('radio-assets', 'radio-assets', true) ON CONFLICT (id) DO NOTHING;
 
 -- Public read access
 CREATE POLICY "Public read radio assets"
