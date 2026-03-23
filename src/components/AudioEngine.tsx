@@ -476,7 +476,29 @@ const AudioEngine = () => {
     };
     const onPause = () => {
       logAudioState('audio pause');
-      if (!isPlayingRef.current) clearStallRecovery();
+      if (!isPlayingRef.current) {
+        clearStallRecovery();
+      } else {
+        logAudioState('System Pause Detected', 'Attempting Auto-Resume for interruptions like Push/Calls');
+        let attempts = 0;
+        const autoResume = () => {
+          if (!isPlayingRef.current) return;
+          if (!audioRef.current?.paused) return;
+          
+          audioRef.current.play().then(() => {
+            logAudioState('Auto-resume success');
+          }).catch(() => {
+            attempts++;
+            if (attempts < 60) {
+              setTimeout(autoResume, 1000);
+            } else {
+              logAudioState('Auto-resume gave up after 60s');
+              useRadioStore.getState().setPlaying(false);
+            }
+          });
+        };
+        setTimeout(autoResume, 1000);
+      }
     };
     const onStalled = () => { 
       logAudioState('audio stalled');

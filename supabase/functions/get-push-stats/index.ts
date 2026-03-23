@@ -27,6 +27,15 @@ serve(async (req) => {
 
     const result = await response.json();
 
+    let segmentsData = [];
+    try {
+      // Try fetching segments to debug
+      const segRes = await fetch(`https://onesignal.com/api/v1/apps/${ONESIGNAL_APP_ID}/segments`, {
+        headers: { "Authorization": `Key ${ONESIGNAL_REST_API_KEY}` }
+      });
+      segmentsData = await segRes.json();
+    } catch { }
+
     if (!response.ok) {
       throw new Error(result.errors?.[0] || "Failed to fetch stats from OneSignal");
     }
@@ -35,10 +44,9 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         total_subscribers: result.messageable_players || 0,
-        // OneSignal free tier doesn't expose exact count for default active/inactive segments via API unfortunately.
-        // We return arbitrary placeholders, or we can just send null to hide it on UI.
         active_subscribers: null, 
         inactive_subscribers: null,
+        debug_segments: segmentsData
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
