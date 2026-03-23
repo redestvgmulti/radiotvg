@@ -524,14 +524,24 @@ const AudioEngine = () => {
     if (ytPlayerRef.current) ytPlayerRef.current.setVolume(volume * 100);
   }, [volume]);
 
-  // Re-resume playback when page becomes visible (handles mobile browser throttling)
+  // Re-resume playback when page becomes visible or focused (handles mobile browser throttling, phone calls, whatsapp voice notes)
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && isPlayingRef.current) {
-        logAudioState('visibility resume', 'checking if audio needs restart');
+    const handleResume = () => {
+      // document.hidden checks if tab is literally hidden, but we also want to catch focus
+      if (!document.hidden && isPlayingRef.current) {
+        logAudioState('resume trigger', 'checking if audio needs restart');
         if (activeSourceType.current === 'hls' && audioRef.current) {
           if (audioRef.current.paused) {
-            logAudioState('visibility resume', 'audio was paused — restarting');
+            logAudioState('resume trigger', 'audio was paused — restarting');
+            
+            // If it's a direct stream and we had a long OS pause, the buffer might be stale or broken
+            // A quick re-assignment fixes the "infinite silence" issue after phone calls
+            if (!useRadioStore.getState().getCurrentStreamUrl()?.includes('.m3u8')) {
+               const currentSrc = audioRef.current.src;
+               audioRef.current.src = '';
+               audioRef.current.src = currentSrc;
+            }
+            
             audioRef.current.play().catch(() => {});
           }
         } else if (activeSourceType.current === 'youtube' && ytPlayerRef.current) {
@@ -539,8 +549,18 @@ const AudioEngine = () => {
         }
       }
     };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    
+    document.addEventListener('visibilitychange', handleResume);
+    window.addEventListener('focus', handleResume);
+    
+    // Also try to forcefully hook to Cordova/Capacitor resume event if ever packaged in the future
+    document.addEventListener('resume', handleResume);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleResume);
+      window.removeEventListener('focus', handleResume);
+      document.removeEventListener('resume', handleResume);
+    };
   }, []);
 
   // Media Session API

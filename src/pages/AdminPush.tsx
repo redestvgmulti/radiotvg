@@ -136,7 +136,20 @@ const AdminPush = () => {
   const [historyPage, setHistoryPage] = useState(0);
   const [historyTotal, setHistoryTotal] = useState(0);
   const [resending, setResending] = useState<string | null>(null);
+  const [pushStats, setPushStats] = useState<{ total_subscribers: number | null }>({ total_subscribers: null });
   const PAGE_SIZE = 10;
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const { data } = await supabase.functions.invoke('get-push-stats');
+        if (data) setPushStats(data);
+      } catch (err) {
+        console.warn('Could not fetch push stats', err);
+      }
+    };
+    fetchStats();
+  }, []);
 
   const fetchHistory = async (page = 0) => {
     const from = page * PAGE_SIZE;
@@ -354,7 +367,19 @@ const AdminPush = () => {
                         className="accent-indigo-500"
                       />
                       <div>
-                        <p className="text-sm font-medium text-slate-700">{opt.label}</p>
+                        <p className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                          {opt.label}
+                          {opt.value === 'all' && pushStats.total_subscribers !== null && (
+                            <span className="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                              {pushStats.total_subscribers} inscritos
+                            </span>
+                          )}
+                          {(opt.value === 'active' || opt.value === 'inactive') && pushStats.total_subscribers !== null && (
+                            <span className="bg-slate-100 text-slate-500 text-[10px] font-bold px-2 py-0.5 rounded-full" title="Contagem exata apenas na hora do disparo">
+                              ? dinâmico
+                            </span>
+                          )}
+                        </p>
                         <p className="text-[10px] text-slate-400">{opt.desc}</p>
                       </div>
                     </label>

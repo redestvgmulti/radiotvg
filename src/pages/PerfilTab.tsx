@@ -53,7 +53,7 @@ const PerfilTab = () => {
       const [profileRes, redemptionsRes, rankRes, vouchersRes] = await Promise.all([
         supabase.from('profiles').select('display_name, avatar_url, total_points, total_listening_minutes').eq('user_id', user.id).single(),
         supabase.from('redemptions').select('*').eq('user_id', user.id).order('redeemed_at', { ascending: false }).limit(10),
-        supabase.from('profiles').select('user_id').order('total_points', { ascending: false }),
+        supabase.from('profiles').select('user_id').order('total_points', { ascending: false }).order('total_listening_minutes', { ascending: false }).order('created_at', { ascending: true }),
         supabase.from('vouchers').select('id, voucher_code, protocol_number, points_spent, status, created_at, rewards(name)').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
       ]);
       setProfile(profileRes.data as Profile | null);
