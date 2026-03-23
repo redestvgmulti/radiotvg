@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, Reorder } from 'framer-motion';
 import { Instagram, Plus, Trash2, Loader2, GripVertical, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -58,6 +58,21 @@ const AdminInstagram = () => {
   const removePost = async (id: string) => { await supabase.from('instagram_posts').delete().eq('id', id); toast({ title: 'Post removido' }); fetchPosts(); };
   const toggleActive = async (id: string, active: boolean) => { await supabase.from('instagram_posts').update({ is_active: !active }).eq('id', id); fetchPosts(); };
 
+  const handleReorder = async (newOrder: InstaPost[]) => {
+    setPosts(newOrder);
+    const updates = newOrder.map((post, index) => ({
+      ...post,
+      sort_order: index,
+    }));
+    const { error } = await supabase.from('instagram_posts').upsert(updates);
+    if (error) {
+      toast({ title: 'Erro ao reordenar', description: error.message, variant: 'destructive' });
+      fetchPosts();
+    } else {
+      toast({ title: 'Ordem atualizada' });
+    }
+  };
+
   return (
     <>
       {/* Header */}
@@ -103,10 +118,10 @@ const AdminInstagram = () => {
             <p className="text-xs text-slate-400">Nenhum post cadastrado.</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <Reorder.Group axis="y" values={posts} onReorder={handleReorder} className="space-y-2">
             {posts.map((post, i) => (
-              <motion.div key={post.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+              <Reorder.Item key={post.id} value={post} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] cursor-grab active:cursor-grabbing">
                 <GripVertical className="h-4 w-4 text-slate-300 flex-shrink-0" />
                 <p className="flex-1 text-xs text-slate-700 truncate font-mono">{post.post_url}</p>
                 <button onClick={() => toggleActive(post.id, post.is_active)}
@@ -116,9 +131,9 @@ const AdminInstagram = () => {
                 <button onClick={() => removePost(post.id)} className="h-8 w-8 rounded-lg bg-slate-100 text-red-400 hover:bg-red-50 hover:text-red-600 flex items-center justify-center transition-colors">
                   <Trash2 className="h-4 w-4" />
                 </button>
-              </motion.div>
+              </Reorder.Item>
             ))}
-          </div>
+          </Reorder.Group>
         )}
       </div>
     </>
