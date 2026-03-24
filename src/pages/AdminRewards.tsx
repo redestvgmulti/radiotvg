@@ -154,56 +154,63 @@ const AdminRewards = () => {
             <p className="text-xs text-slate-400">Nenhuma recompensa cadastrada.</p>
           </div>
         ) : (
-          rewards.map((r, i) => (
-            <motion.div key={r.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-              className={`rounded-xl bg-white border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden ${!r.is_active ? 'opacity-50' : ''}`}>
-              <div className="flex items-center gap-3 px-4 py-3.5">
-                {r.image_url ? (
-                  <img src={r.image_url} alt={r.name} className="h-12 w-12 rounded-lg object-cover border border-slate-100 flex-shrink-0" />
-                ) : (
-                  <div className="h-12 w-12 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0"><Gift className="h-5 w-5 text-slate-300" /></div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 truncate">{r.name}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[11px] font-bold text-pink-600">{r.points_cost} pts</span>
-                    {r.partner && <span className="text-[10px] text-slate-400">· {r.partner}</span>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {rewards.map((r, i) => (
+              <motion.div key={r.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.04 }}
+                className={`flex flex-col rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden ${!r.is_active ? 'opacity-50 grayscale-[30%]' : ''}`}>
+                
+                {/* Visual Area */}
+                <div className="relative h-32 bg-slate-100 border-b border-slate-100 group">
+                  {r.image_url ? (
+                    <img src={r.image_url} alt={r.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-300"><Gift className="h-8 w-8" /></div>
+                  )}
+                  {/* Action overlay */}
+                  <div className="absolute top-2 right-2 flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => toggleActive(r)} disabled={saving === r.id}
+                      className={`h-7 w-7 rounded-md flex items-center justify-center transition-colors shadow-sm backdrop-blur-md ${r.is_active ? 'bg-green-500/90 text-white hover:bg-green-600' : 'bg-slate-600/90 text-white hover:bg-slate-700'}`}>
+                      <Power className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={() => editingId === r.id ? cancelEdit() : startEdit(r)}
+                      className={`h-7 w-7 rounded-md flex items-center justify-center transition-colors shadow-sm backdrop-blur-md ${editingId === r.id ? 'bg-blue-500/90 text-white' : 'bg-slate-800/80 text-white hover:bg-slate-900'}`}>
+                      {editingId === r.id ? <X className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
+                    </button>
+                    <button onClick={() => deleteReward(r)} disabled={saving === r.id}
+                      className="h-7 w-7 rounded-md flex items-center justify-center bg-red-500/90 shadow-sm backdrop-blur-md text-white hover:bg-red-600 transition-colors">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => toggleActive(r)} disabled={saving === r.id}
-                    className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${r.is_active ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>
-                    <Power className="h-4 w-4" />
-                  </button>
-                  <button onClick={() => editingId === r.id ? cancelEdit() : startEdit(r)}
-                    className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${editingId === r.id ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600'}`}>
-                    {editingId === r.id ? <X className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
-                  </button>
-                  <button onClick={() => deleteReward(r)} disabled={saving === r.id}
-                    className="h-8 w-8 rounded-lg flex items-center justify-center bg-slate-100 text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
 
-              <AnimatePresence>
-                {editingId === r.id && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
-                    <div className="px-4 pb-4 pt-3 space-y-3 border-t border-slate-100 bg-slate-50/50">
-                      <InputField label="Nome" value={editForm.name || ''} onChange={v => setEditForm({ ...editForm, name: v })} />
-                      <ImageUploadField imageUrl={editForm.image_url || ''} onUrlChange={url => setEditForm({ ...editForm, image_url: url })} uploadKey={r.id} uploading={uploading} onUpload={uploadImage} />
-                      <InputField label="Pontos Necessários" value={String(editForm.points_cost || 0)} onChange={v => setEditForm({ ...editForm, points_cost: Number(v) || 0 })} type="number" />
-                      <InputField label="Parceiro" value={editForm.partner || ''} onChange={v => setEditForm({ ...editForm, partner: v })} placeholder="Nome do parceiro" />
-                      <button onClick={saveEdit} disabled={saving === r.id}
-                        className="w-full h-9 rounded-lg bg-blue-600 text-white font-semibold text-xs flex items-center justify-center gap-1.5 disabled:opacity-60 hover:bg-blue-700 transition-colors shadow-sm">
-                        {saving === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><Save className="h-3.5 w-3.5" /> Salvar</>}
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          ))
+                {/* Content Area */}
+                <div className="p-3 flex-1 flex flex-col">
+                  <p className="text-sm font-bold text-slate-800 truncate mb-2">{r.name}</p>
+                  <div className="flex flex-wrap items-center gap-2 mb-2 mt-auto">
+                    <span className="text-[11px] font-black text-pink-600 bg-pink-50 px-2 py-0.5 rounded-full">{r.points_cost} pts</span>
+                    {r.partner && <span className="text-[10px] text-slate-500 truncate mt-0.5 flex items-center max-w-[100px]">· {r.partner}</span>}
+                  </div>
+                </div>
+
+                <AnimatePresence>
+                  {editingId === r.id && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
+                      <div className="px-4 pb-4 pt-3 space-y-3 border-t border-slate-100 bg-slate-50/50">
+                        <InputField label="Nome" value={editForm.name || ''} onChange={v => setEditForm({ ...editForm, name: v })} />
+                        <ImageUploadField imageUrl={editForm.image_url || ''} onUrlChange={url => setEditForm({ ...editForm, image_url: url })} uploadKey={r.id} uploading={uploading} onUpload={uploadImage} />
+                        <InputField label="Pontos Necessários" value={String(editForm.points_cost || 0)} onChange={v => setEditForm({ ...editForm, points_cost: Number(v) || 0 })} type="number" />
+                        <InputField label="Parceiro" value={editForm.partner || ''} onChange={v => setEditForm({ ...editForm, partner: v })} placeholder="Nome do parceiro" />
+                        <button onClick={saveEdit} disabled={saving === r.id}
+                          className="w-full h-9 rounded-lg bg-blue-600 text-white font-semibold text-xs flex items-center justify-center gap-1.5 disabled:opacity-60 hover:bg-blue-700 transition-colors shadow-sm">
+                          {saving === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><Save className="h-3.5 w-3.5" /> Salvar</>}
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            ))}
+          </div>
         )}
       </div>
     </>

@@ -94,6 +94,14 @@ const AdminPrograms = () => {
   const getStationLabel = (id: string | null) => stations.find(s => s.id === id)?.label;
   const filtered = selectedDay !== null ? programs.filter(p => p.day_of_week === selectedDay) : programs;
 
+  const getShiftColor = (time: string) => {
+    const hour = parseInt(time.split(':')[0] || '0', 10);
+    if (hour >= 5 && hour < 12) return 'bg-amber-400'; // Manhã
+    if (hour >= 12 && hour < 18) return 'bg-orange-500'; // Tarde
+    if (hour >= 18 && hour < 24) return 'bg-indigo-600'; // Noite
+    return 'bg-slate-800'; // Madrugada
+  };
+
   return (
     <>
       {/* Header */}
@@ -173,8 +181,9 @@ const AdminPrograms = () => {
         ) : (
           filtered.map((p, i) => (
             <motion.div key={p.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
-              className={`flex items-center gap-3 p-3.5 rounded-xl bg-white border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] ${!p.is_active ? 'opacity-50' : ''}`}>
-              <div className="flex flex-col items-center justify-center w-12 shrink-0 bg-slate-50 rounded-lg py-1.5">
+              className={`flex items-center gap-3 p-3.5 pl-0 pr-4 rounded-xl bg-white border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden relative ${!p.is_active ? 'opacity-50 grayscale-[20%]' : ''}`}>
+              <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${getShiftColor(p.start_time)}`} />
+              <div className="flex flex-col items-center justify-center w-12 shrink-0 bg-slate-50/80 rounded-lg py-1.5 ml-3.5">
                 <Clock className="h-3.5 w-3.5 text-slate-400 mb-0.5" />
                 <span className="text-[10px] font-medium text-slate-600 leading-tight">{p.start_time.slice(0, 5)}</span>
                 <span className="text-[10px] text-slate-400 leading-tight">{p.end_time.slice(0, 5)}</span>

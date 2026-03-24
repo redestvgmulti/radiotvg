@@ -110,21 +110,22 @@ const AdminWhatsapp = () => {
             {/* Preview */}
             {previewLink && (
               <div className="rounded-xl bg-slate-50 border border-slate-100 p-5 space-y-3">
-                <label className="text-xs font-semibold text-slate-700 block">Pré-visualização do link</label>
-                <div className="bg-white rounded-lg border border-slate-200 px-3 py-2 flex items-center gap-2">
-                  <p className="text-xs text-slate-600 flex-1 truncate font-mono">{previewLink}</p>
-                  <a href={previewLink} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700">
-                    <ExternalLink className="h-3.5 w-3.5" />
+                <label className="text-xs font-semibold text-slate-700 block mb-3">Pré-visualização do link</label>
+                <div className="bg-white rounded-lg border border-slate-200 px-3 py-2 flex items-center justify-between gap-3">
+                  <p className="text-xs text-slate-500 truncate font-mono w-full">{previewLink}</p>
+                  <a href={previewLink} target="_blank" rel="noopener noreferrer" 
+                     className="h-7 px-3 flex-shrink-0 rounded-md bg-[#25D366]/10 text-[#25D366] text-[10px] font-bold flex items-center gap-1.5 hover:bg-[#25D366]/20 transition-colors">
+                    <ExternalLink className="h-3 w-3" />
+                    Testar Link
                   </a>
                 </div>
               </div>
             )}
 
-            {/* Save */}
             <button
               onClick={handleSave}
               disabled={saving}
-              className="w-full h-10 rounded-lg bg-green-500 text-white font-semibold text-sm flex items-center justify-center gap-2 hover:bg-green-600 transition-colors shadow-sm disabled:opacity-50"
+              className="w-full h-11 rounded-lg bg-[#25D366] text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#1DA851] transition-colors shadow-sm disabled:opacity-50"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Salvar

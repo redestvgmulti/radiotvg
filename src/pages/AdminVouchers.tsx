@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Ticket, Download, Loader2, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Ticket, Download, Loader2, CheckCircle, XCircle, ArrowLeft, Search, MoreVertical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -30,6 +30,8 @@ const AdminVouchers = () => {
   const [vouchers, setVouchers] = useState<VoucherRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -91,7 +93,15 @@ const AdminVouchers = () => {
         </button>
       </div>
 
-      <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 py-6">
+      <div className="max-w-md md:max-w-3xl lg:max-w-5xl mx-auto px-4 py-6">
+        <div className="mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input type="text" placeholder="Buscar por voucher, e-mail ou recompensa..." value={search} onChange={e => setSearch(e.target.value)}
+              className="w-full h-10 pl-9 pr-4 rounded-xl bg-white border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 shadow-sm transition-colors" />
+          </div>
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-slate-400" /></div>
         ) : vouchers.length === 0 ? (
@@ -100,53 +110,87 @@ const AdminVouchers = () => {
             <p className="text-xs text-slate-400">Nenhum voucher gerado.</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {vouchers.map((v, i) => {
-              const st = STATUS_LABELS[v.status] || STATUS_LABELS.pending;
-              return (
-                <motion.div key={v.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
-                  className="rounded-xl bg-white border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono text-sm font-bold text-slate-800">{v.voucher_code}</span>
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${st.bg} ${st.text}`}>{st.label}</span>
-                      </div>
-                      <p className="text-[10px] text-slate-400 font-mono">{v.protocol_number}</p>
-                      <div className="flex flex-col gap-0.5 mt-1 border border-slate-100 rounded-lg p-2 bg-slate-50/50">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs">
-                           <span className="font-semibold text-slate-700">{v.display_name || 'Sem nome'}</span>
-                           <span className="text-slate-500 text-[10px]">{v.email || 'Email não disponível'}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 mt-1 border-t border-slate-100">
-                          <span className="font-medium text-slate-600 truncate">{v.reward_name || 'Recompensa Excluída'}</span>
-                          <span className="shrink-0 ml-2 font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">{v.points_spent} pts</span>
-                        </div>
-                      </div>
-                      <p className="text-[10px] text-slate-400 pt-1">
-                        Gerado em {new Date(v.created_at).toLocaleString('pt-BR')}
-                        {v.redeemed_at && ` · Utilizado em ${new Date(v.redeemed_at).toLocaleString('pt-BR')}`}
-                      </p>
-                    </div>
-
-                    {v.status === 'pending' && (
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <button onClick={() => updateStatus(v.id, 'redeemed')} disabled={acting === v.id}
-                          className="h-8 w-8 rounded-lg bg-green-100 text-green-600 hover:bg-green-200 disabled:opacity-50 flex items-center justify-center transition-colors"
-                          title="Marcar como Utilizado">
-                          {acting === v.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-                        </button>
-                        <button onClick={() => updateStatus(v.id, 'cancelled')} disabled={acting === v.id}
-                          className="h-8 w-8 rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 disabled:opacity-50 flex items-center justify-center transition-colors"
-                          title="Cancelar">
-                          <XCircle className="h-4 w-4" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              );
-            })}
+          <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] border border-slate-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-100 text-[10px] uppercase tracking-wider text-slate-500 font-bold">
+                    <th className="px-4 py-3">Código / E-mail</th>
+                    <th className="px-4 py-3">Recompensa</th>
+                    <th className="px-4 py-3 hidden sm:table-cell">Status</th>
+                    <th className="px-4 py-3 text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {vouchers.filter(v => 
+                    (v.email || '').toLowerCase().includes(search.toLowerCase()) || 
+                    (v.voucher_code || '').toLowerCase().includes(search.toLowerCase()) ||
+                    (v.reward_name || '').toLowerCase().includes(search.toLowerCase())
+                  ).map((v, i) => {
+                    const st = STATUS_LABELS[v.status] || STATUS_LABELS.pending;
+                    return (
+                      <motion.tr key={v.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-slate-800 font-mono">{v.voucher_code}</span>
+                            <span className="text-[11px] text-slate-500 truncate max-w-[150px]">{v.email || 'Email não disponível'}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-semibold text-slate-700 truncate max-w-[200px]">{v.reward_name || 'Recompensa Excluída'}</span>
+                            <span className="text-[10px] font-bold text-emerald-600">{v.points_spent} pts</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 hidden sm:table-cell">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md ${st.bg} ${st.text}`}>
+                            {st.label}
+                          </span>
+                          <p className="text-[9px] text-slate-400 mt-1">Gerado: {new Date(v.created_at).toLocaleDateString('pt-BR')}</p>
+                        </td>
+                        <td className="px-4 py-3 text-right relative">
+                          <span className={`sm:hidden text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md ${st.bg} ${st.text} block mb-2 w-max ml-auto opacity-70`}>
+                            {st.label}
+                          </span>
+                          <button onClick={() => setOpenMenuId(openMenuId === v.id ? null : v.id)} className="h-8 w-8 inline-flex items-center justify-center rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors">
+                            <MoreVertical className="h-4 w-4" />
+                          </button>
+                          
+                          <AnimatePresence>
+                            {openMenuId === v.id && (
+                              <>
+                                <div className="fixed inset-0 z-10" onClick={() => setOpenMenuId(null)} />
+                                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                                  className="absolute right-8 top-10 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-20 origin-top-right">
+                                  {v.status === 'pending' ? (
+                                    <>
+                                      <button onClick={() => { updateStatus(v.id, 'redeemed'); setOpenMenuId(null); }} disabled={acting === v.id}
+                                        className="w-full px-3 py-2 text-[11px] font-medium text-green-700 hover:bg-green-50 flex items-center gap-2 text-left disabled:opacity-50">
+                                        <CheckCircle className="h-3.5 w-3.5" /> Marcar como Utilizado
+                                      </button>
+                                      <div className="h-px bg-slate-100 my-1" />
+                                      <button onClick={() => { updateStatus(v.id, 'cancelled'); setOpenMenuId(null); }} disabled={acting === v.id}
+                                        className="w-full px-3 py-2 text-[11px] font-medium text-red-600 hover:bg-red-50 flex items-center gap-2 text-left disabled:opacity-50">
+                                        <XCircle className="h-3.5 w-3.5" /> Cancelar Voucher
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <div className="px-3 py-2 text-[10px] text-slate-400 text-center">Nenhuma ação disponível</div>
+                                  )}
+                                </motion.div>
+                              </>
+                            )}
+                          </AnimatePresence>
+                        </td>
+                      </motion.tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {vouchers.filter(v => (v.email || '').toLowerCase().includes(search.toLowerCase()) || (v.voucher_code || '').toLowerCase().includes(search.toLowerCase()) || (v.reward_name || '').toLowerCase().includes(search.toLowerCase())).length === 0 && (
+                 <div className="p-8 text-center text-sm text-slate-500">Nenhum voucher encontrado.</div>
+              )}
+            </div>
           </div>
         )}
       </div>

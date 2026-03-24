@@ -122,13 +122,12 @@ const AdminInstagram = () => {
             {posts.map((post, i) => (
               <Reorder.Item key={post.id} value={post} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] cursor-grab active:cursor-grabbing">
-                <GripVertical className="h-4 w-4 text-slate-300 flex-shrink-0" />
-                <p className="flex-1 text-xs text-slate-700 truncate font-mono">{post.post_url}</p>
-                <button onClick={() => toggleActive(post.id, post.is_active)}
-                  className={`text-[9px] font-bold px-2.5 py-1 rounded-full ${post.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
-                  {post.is_active ? 'Ativo' : 'Inativo'}
-                </button>
-                <button onClick={() => removePost(post.id)} className="h-8 w-8 rounded-lg bg-slate-100 text-red-400 hover:bg-red-50 hover:text-red-600 flex items-center justify-center transition-colors">
+                <GripVertical className="h-4 w-4 text-slate-300 flex-shrink-0 cursor-grab" />
+                <div className="flex-1 min-w-0 flex items-center justify-between">
+                  <p className="text-sm font-semibold text-slate-700 truncate pr-4">Post: <strong className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-blue-600">{post.post_url.split('/')[4] || 'Link'}</strong></p>
+                  <a href={post.post_url} target="_blank" className="text-[10px] text-slate-400 hover:text-blue-500 hover:underline flex-shrink-0 font-mono hidden sm:block truncate max-w-[150px]">{post.post_url}</a>
+                </div>
+                <button onClick={() => removePost(post.id)} className="h-8 w-8 rounded-lg bg-slate-100/50 text-red-400 hover:bg-red-50 hover:text-red-600 flex items-center justify-center transition-colors">
                   <Trash2 className="h-4 w-4" />
                 </button>
               </Reorder.Item>

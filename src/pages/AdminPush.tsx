@@ -406,26 +406,46 @@ const AdminPush = () => {
               </div>
             </div>
 
-            {/* Preview */}
-            <div className="rounded-xl bg-slate-50 border border-slate-100 p-5 space-y-3">
-              <label className="text-xs font-semibold text-slate-700 block">Pré-visualização</label>
-              <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-                <div className="flex items-start gap-3">
-                  {iconUrl ? (
-                    <img src={iconUrl} alt="icon" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
-                      <Bell className="h-5 w-5 text-slate-300" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-slate-800">{title || 'Título da notificação'}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{message || 'Mensagem da notificação'}</p>
+            {/* Preview Mockup */}
+            <div className="rounded-xl bg-slate-50 border border-slate-100 p-5 space-y-4">
+              <label className="text-xs font-semibold text-slate-700 block">Mockup de Visualização (iOS)</label>
+              <div className="relative mx-auto w-full max-w-[320px] rounded-[2.5rem] bg-slate-900 border-[8px] border-slate-800 shadow-xl overflow-hidden" 
+                   style={{ height: imageUrl ? '360px' : '200px', transition: 'height 0.3s ease' }}>
+                {/* Wallpaper simulation */}
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 opacity-60" />
+                
+                {/* Notch / Status bar */}
+                <div className="absolute top-0 w-full flex justify-between items-center px-5 pt-1.5 pb-2 text-[10px] text-white font-medium z-10">
+                  <span>9:41</span>
+                  <div className="flex gap-1 items-center">
+                    <div className="w-3.5 h-2.5 bg-white rounded-sm" />
+                    <div className="w-3.5 h-2.5 rounded-full bg-white" />
                   </div>
                 </div>
-                {imageUrl && (
-                  <img src={imageUrl} alt="push banner" className="w-full h-32 object-cover rounded-lg mt-3" />
-                )}
+                
+                {/* Notification Bubble */}
+                <div className="absolute top-10 left-3 right-3 bg-white/90 backdrop-blur-md rounded-2xl p-3 shadow-lg pointer-events-none transition-all duration-300">
+                  <div className="flex items-center gap-1.5 mb-2 border-b border-slate-200/50 pb-1.5">
+                    {iconUrl ? (
+                       <img src={iconUrl} alt="app icon" className="w-4 h-4 rounded-[4px] object-cover" />
+                    ) : (
+                       <div className="w-4 h-4 bg-indigo-500 rounded-[4px] flex items-center justify-center">
+                         <Bell className="h-2 w-2 text-white" />
+                       </div>
+                    )}
+                    <span className="text-[10px] font-medium text-slate-800 tracking-wide uppercase opacity-80">Rádio TVG</span>
+                    <span className="text-[10px] text-slate-500 ml-auto">agora</span>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <p className="text-[13px] font-bold text-slate-900 leading-tight">{title || 'Título da notificação'}</p>
+                    <p className="text-[12px] text-slate-600 leading-snug line-clamp-3">{message || 'Sua mensagem aparecerá aqui para os usuários...'}</p>
+                    {imageUrl && (
+                      <div className="mt-2 rounded-lg overflow-hidden h-32 bg-slate-100 border border-slate-200" style={{ animation: 'fadeIn 0.5s ease-out' }}>
+                        <img src={imageUrl} alt="push banner" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 

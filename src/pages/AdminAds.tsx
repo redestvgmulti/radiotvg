@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, Plus, Save, Loader2, Power, Pencil, X, Trash2, Upload, ImageIcon, Clock, ExternalLink, Film, Megaphone } from 'lucide-react';
+import { ArrowLeft, Plus, Save, Loader2, Power, Pencil, X, Trash2, Upload, ImageIcon, Clock, ExternalLink, Film, Megaphone, Radio } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -265,69 +265,83 @@ const AdminAds = () => {
             <p className="text-xs text-slate-400">Nenhum anúncio cadastrado.</p>
           </div>
         ) : (
-          ads.map((ad, i) => (
-            <motion.div key={ad.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-              className={`rounded-xl bg-white border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden ${!ad.is_active ? 'opacity-50' : ''}`}>
-              <div className="flex items-center gap-3 px-4 py-3.5">
-                <MediaPreview url={ad.media_url} type={ad.media_type} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 truncate">{ad.name}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] text-slate-500 capitalize bg-slate-100 px-1.5 py-0.5 rounded font-medium">{ad.media_type}</span>
-                    <span className="text-[10px] text-slate-400 flex items-center gap-0.5"><Clock className="h-2.5 w-2.5" />{ad.display_duration}s</span>
-                    {ad.link_url && <span className="text-[10px] text-slate-400 flex items-center gap-0.5 truncate max-w-[80px]"><ExternalLink className="h-2.5 w-2.5 flex-shrink-0" />{ad.link_url.replace(/https?:\/\//, '').split('/')[0]}</span>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {ads.map((ad, i) => (
+              <motion.div key={ad.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.04 }}
+                className={`flex flex-col rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden ${!ad.is_active ? 'opacity-50 grayscale-[50%]' : ''}`}>
+                
+                {/* Visual Area */}
+                <div className="relative h-32 bg-slate-100 border-b border-slate-100 group">
+                  {ad.media_type === 'video' ? (
+                     <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-200/50"><Film className="h-8 w-8 mb-2" /><span className="text-[10px] font-bold">VÍDEO</span></div>
+                  ) : ad.media_url ? (
+                    <img src={ad.media_url} alt={ad.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-300"><ImageIcon className="h-8 w-8" /></div>
+                  )}
+                  {/* Action overlay */}
+                  <div className="absolute top-2 right-2 flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => toggleActive(ad)} disabled={saving === ad.id}
+                      className={`h-7 w-7 rounded-md flex items-center justify-center transition-colors shadow-sm backdrop-blur-md ${ad.is_active ? 'bg-green-500/90 text-white hover:bg-green-600' : 'bg-slate-600/90 text-white hover:bg-slate-700'}`}>
+                      <Power className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={() => editingId === ad.id ? cancelEdit() : startEdit(ad)}
+                      className={`h-7 w-7 rounded-md flex items-center justify-center transition-colors shadow-sm backdrop-blur-md ${editingId === ad.id ? 'bg-blue-500/90 text-white' : 'bg-slate-800/80 text-white hover:bg-slate-900'}`}>
+                      {editingId === ad.id ? <X className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
+                    </button>
+                    <button onClick={() => deleteAd(ad)} disabled={saving === ad.id}
+                      className="h-7 w-7 rounded-md flex items-center justify-center bg-red-500/90 shadow-sm backdrop-blur-md text-white hover:bg-red-600 transition-colors">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
+                </div>
+
+                {/* Content Area */}
+                <div className="p-3 flex-1 flex flex-col relative">
+                  <p className="text-sm font-bold text-slate-800 truncate leading-tight mb-2 pr-4">{ad.name}</p>
+                  <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                    <span className="text-[9px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">{ad.media_type.toUpperCase()}</span>
+                    <span className="text-[10px] text-slate-500 flex items-center gap-0.5"><Clock className="h-3 w-3 text-slate-400" />{ad.display_duration}s</span>
+                  </div>
+                  {ad.link_url && <a href={ad.link_url} target="_blank" className="text-[10px] text-blue-500 hover:text-blue-600 font-medium flex items-center gap-1 truncate mb-2 mt-auto"><ExternalLink className="h-3 w-3 flex-shrink-0" />{ad.link_url.replace(/https?:\/\//, '').split('/')[0]}</a>}
+                  {!ad.link_url && <div className="mt-auto" />}
                   {ad.station_ids.length > 0 && (
-                    <p className="text-[10px] text-slate-400 mt-0.5 truncate">{getStationNames(ad.station_ids)}</p>
+                    <p className="text-[9px] text-slate-400 mt-2 truncate border-t border-slate-100 pt-2 leading-tight flex items-center gap-1"><Radio className="h-2.5 w-2.5"/> {getStationNames(ad.station_ids)}</p>
                   )}
                 </div>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => toggleActive(ad)} disabled={saving === ad.id}
-                    className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${ad.is_active ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>
-                    <Power className="h-4 w-4" />
-                  </button>
-                  <button onClick={() => editingId === ad.id ? cancelEdit() : startEdit(ad)}
-                    className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${editingId === ad.id ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600'}`}>
-                    {editingId === ad.id ? <X className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
-                  </button>
-                  <button onClick={() => deleteAd(ad)} disabled={saving === ad.id}
-                    className="h-8 w-8 rounded-lg flex items-center justify-center bg-slate-100 text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
 
-              <AnimatePresence>
-                {editingId === ad.id && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
-                    <div className="px-4 pb-4 pt-3 space-y-3 border-t border-slate-100 bg-slate-50/50">
-                      <InputField label="Nome" value={editForm.name || ''} onChange={v => setEditForm({ ...editForm, name: v })} />
-                      <ImageUploadField mediaUrl={editForm.media_url || ''} onUrlChange={url => setEditForm({ ...editForm, media_url: url })} uploadKey={ad.id} uploading={uploading} onUpload={uploadMedia} />
-                      <div>
-                        <label className="text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-1 block">Tipo de Mídia</label>
-                        <div className="flex gap-1.5">
-                          {MEDIA_TYPES.map(t => (
-                            <button key={t} type="button" onClick={() => setEditForm({ ...editForm, media_type: t })}
-                              className={`h-7 px-3 rounded-lg text-[10px] font-bold capitalize transition-colors ${editForm.media_type === t ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
-                              {t}
-                            </button>
-                          ))}
+                <AnimatePresence>
+                  {editingId === ad.id && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
+                      <div className="px-4 pb-4 pt-3 space-y-3 border-t border-slate-100 bg-slate-50/50">
+                        <InputField label="Nome" value={editForm.name || ''} onChange={v => setEditForm({ ...editForm, name: v })} />
+                        <ImageUploadField mediaUrl={editForm.media_url || ''} onUrlChange={url => setEditForm({ ...editForm, media_url: url })} uploadKey={ad.id} uploading={uploading} onUpload={uploadMedia} />
+                        <div>
+                          <label className="text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-1 block">Tipo de Mídia</label>
+                          <div className="flex gap-1.5">
+                            {MEDIA_TYPES.map(t => (
+                              <button key={t} type="button" onClick={() => setEditForm({ ...editForm, media_type: t })}
+                                className={`h-7 px-3 rounded-lg text-[10px] font-bold capitalize transition-colors ${editForm.media_type === t ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                                {t}
+                              </button>
+                            ))}
+                          </div>
                         </div>
+                        <InputField label="Link (URL)" value={editForm.link_url || ''} onChange={v => setEditForm({ ...editForm, link_url: v })} placeholder="https://anunciante.com" type="url" />
+                        <InputField label="Duração" value={String(editForm.display_duration || 15)} onChange={v => setEditForm({ ...editForm, display_duration: Number(v) || 15 })} type="number" />
+                        <InputField label="Ordem" value={String(editForm.sort_order || 0)} onChange={v => setEditForm({ ...editForm, sort_order: Number(v) || 0 })} type="number" />
+                        <StationSelector selected={editForm.station_ids || []} onChange={ids => setEditForm({ ...editForm, station_ids: ids })} stations={stations} />
+                        <button onClick={saveEdit} disabled={saving === ad.id}
+                          className="w-full h-9 rounded-lg bg-blue-600 text-white font-semibold text-xs flex items-center justify-center gap-1.5 disabled:opacity-60 hover:bg-blue-700 transition-colors shadow-sm">
+                          {saving === ad.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><Save className="h-3.5 w-3.5" /> Salvar</>}
+                        </button>
                       </div>
-                      <InputField label="Link (URL)" value={editForm.link_url || ''} onChange={v => setEditForm({ ...editForm, link_url: v })} placeholder="https://anunciante.com" type="url" />
-                      <InputField label="Duração (segundos)" value={String(editForm.display_duration || 15)} onChange={v => setEditForm({ ...editForm, display_duration: Number(v) || 15 })} type="number" />
-                      <InputField label="Ordem" value={String(editForm.sort_order || 0)} onChange={v => setEditForm({ ...editForm, sort_order: Number(v) || 0 })} type="number" />
-                      <StationSelector selected={editForm.station_ids || []} onChange={ids => setEditForm({ ...editForm, station_ids: ids })} stations={stations} />
-                      <button onClick={saveEdit} disabled={saving === ad.id}
-                        className="w-full h-9 rounded-lg bg-blue-600 text-white font-semibold text-xs flex items-center justify-center gap-1.5 disabled:opacity-60 hover:bg-blue-700 transition-colors shadow-sm">
-                        {saving === ad.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><Save className="h-3.5 w-3.5" /> Salvar</>}
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          ))
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            ))}
+          </div>
         )}
       </div>
     </>
