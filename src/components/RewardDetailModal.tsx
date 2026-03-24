@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Gift, Loader2, X, Info, AlertCircle, Calendar, Clock, MapPin } from 'lucide-react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface Reward {
   id: string;
@@ -69,6 +69,9 @@ const RewardDetailModal = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[92vw] max-w-md mx-auto sm:w-full p-0 rounded-3xl overflow-hidden border-border bg-card [&>button]:hidden shadow-2xl">
+        <DialogTitle className="sr-only">{reward.name}</DialogTitle>
+        <DialogDescription className="sr-only">Detalhes da recompensa {reward.name}</DialogDescription>
+        
         {/* Close Button Overlay */}
         <button 
           onClick={() => onOpenChange(false)}
@@ -138,15 +141,8 @@ const RewardDetailModal = ({
             </div>
           )}
           
-          {/* Fixed expiration and location info */}
-          <div className="space-y-3 pt-2">
-            <div className="flex items-start gap-3 p-4 rounded-2xl bg-orange-500/10 border border-orange-500/20 text-orange-500 text-sm">
-              <Clock className="h-5 w-5 flex-shrink-0 mt-0.5" />
-              <div className="leading-relaxed">
-                Voucher gerado terá <strong>validade de 7 dias</strong> após o resgate.
-              </div>
-            </div>
-            
+          {/* Fixed location info */}
+          <div className="pt-2">
             <div className="flex items-start gap-3 p-4 rounded-2xl bg-muted/50 border border-border text-sm text-foreground/80">
               <MapPin className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
               <div className="leading-relaxed">
@@ -156,10 +152,16 @@ const RewardDetailModal = ({
             </div>
           </div>
           
-          {/* Weekly reminder visually for user info */}
-          <div className="flex items-start gap-2 px-1 text-xs text-muted-foreground">
-            <Calendar className="h-3.5 w-3.5 mt-0.5 opacity-60 flex-shrink-0" />
-            <span>Limite de 1 resgate por semana para esta recompensa.</span>
+          {/* Rules and Reminders */}
+          <div className="space-y-2 px-1 mt-4">
+            <div className="flex items-start gap-2 text-xs text-muted-foreground">
+              <Calendar className="h-3.5 w-3.5 mt-0.5 opacity-60 flex-shrink-0" />
+              <span>Limite de 1 resgate por semana para esta recompensa.</span>
+            </div>
+            <div className="flex items-start gap-2 text-xs text-orange-500 font-medium">
+              <Clock className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+              <span>Voucher gerado terá <strong>validade de 7 dias</strong> após o resgate.</span>
+            </div>
           </div>
         </div>
 

@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
 import { Copy, Check, Ticket, Clock, MapPin } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -52,6 +52,9 @@ const VoucherModal = ({ open, onOpenChange, voucherCode, protocolNumber, rewardN
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[92vw] max-w-sm mx-auto sm:w-full rounded-3xl border-primary/20 bg-card p-0 overflow-hidden shadow-2xl">
+        <DialogTitle className="sr-only">Seu Voucher de Recompensa</DialogTitle>
+        <DialogDescription className="sr-only">Código do voucher emitido com sucesso e contador de dias para expirar.</DialogDescription>
+        
         {/* Header gradient */}
         <div className="bg-gradient-to-br from-primary/20 to-accent/10 px-6 pt-6 pb-4 text-center">
           <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto mb-3">
