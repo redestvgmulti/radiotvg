@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Bell, Save, Loader2, Upload, X, Image as ImageIcon, Send, Users, Clock, CheckCircle, XCircle, History, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Bell, Save, Loader2, Upload, X, Image as ImageIcon, Send, Users, Clock, CheckCircle, XCircle, History, RefreshCw, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -137,6 +137,7 @@ const AdminPush = () => {
   const [historyTotal, setHistoryTotal] = useState(0);
   const [resending, setResending] = useState<string | null>(null);
   const [pushStats, setPushStats] = useState<{ total_subscribers: number | null }>({ total_subscribers: null });
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const PAGE_SIZE = 10;
 
   useEffect(() => {
@@ -180,6 +181,21 @@ const AdminPush = () => {
       await fetchHistory(historyPage);
     } finally {
       setResending(null);
+    }
+  };
+
+  const handleDeleteHistory = async (h: PushRecord) => {
+    if (!confirm(`Em definitivo excluir o registro de envio: "${h.title}"?`)) return;
+    setDeletingId(h.id);
+    try {
+      const { error } = await supabase.from('push_history').delete().eq('id', h.id);
+      if (error) throw error;
+      toast({ title: 'Registro excluído' });
+      await fetchHistory(historyPage);
+    } catch (err: any) {
+      toast({ title: 'Erro ao excluir', description: err.message, variant: 'destructive' });
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -521,14 +537,24 @@ const AdminPush = () => {
                           }`}>
                             {h.status === 'sent' ? 'Enviado' : 'Falhou'}
                           </span>
-                          <button
-                            onClick={() => handleResend(h)}
-                            disabled={resending === h.id}
-                            className="h-6 px-2 rounded-md bg-slate-100 text-slate-500 text-[10px] font-semibold flex items-center gap-1 hover:bg-indigo-100 hover:text-indigo-600 transition-colors disabled:opacity-50"
-                          >
-                            {resending === h.id ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <RefreshCw className="h-2.5 w-2.5" />}
-                            Reenviar
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleResend(h)}
+                              disabled={resending === h.id || deletingId === h.id}
+                              className="h-6 px-2 rounded-md bg-slate-100 text-slate-500 text-[10px] font-semibold flex items-center gap-1 hover:bg-indigo-100 hover:text-indigo-600 transition-colors disabled:opacity-50"
+                            >
+                              {resending === h.id ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <RefreshCw className="h-2.5 w-2.5" />}
+                              Reenviar
+                            </button>
+                            <button
+                              onClick={() => handleDeleteHistory(h)}
+                              disabled={resending === h.id || deletingId === h.id}
+                              className="h-6 w-6 rounded-md bg-slate-100 text-slate-400 flex items-center justify-center hover:bg-red-100 hover:text-red-500 transition-colors disabled:opacity-50"
+                              title="Excluir histórico"
+                            >
+                              {deletingId === h.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}

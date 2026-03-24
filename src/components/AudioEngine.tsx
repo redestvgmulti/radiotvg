@@ -259,7 +259,27 @@ const AudioEngine = () => {
           } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
             logAudioState('HLS fatal error', 'MEDIA — recovering');
             setStreamError('Erro de mídia. Recuperando...');
-            hls.recoverMediaError();
+            // Prevent infinite MEDIA_ERROR loops by checking elapsed time
+            const now = Date.now();
+            if (!hlsRef.current) return;
+            const hlsInstance = hlsRef.current as any;
+            if (!hlsInstance._mediaErrorTime || now - hlsInstance._mediaErrorTime > 3000) {
+              hlsInstance._mediaErrorTime = now;
+              hlsInstance._mediaErrorCount = 1;
+              hls.recoverMediaError();
+            } else {
+              hlsInstance._mediaErrorCount++;
+              if (hlsInstance._mediaErrorCount > 3) {
+                logAudioState('HLS fatal error', 'MEDIA loop detected. Reinitializing.');
+                hls.destroy();
+                hlsRef.current = null;
+                setTimeout(() => initHls(url), 2000);
+                return;
+              } else {
+                hls.swapAudioCodec();
+                hls.recoverMediaError();
+              }
+            }
           } else {
             // Other fatal errors — full retry after 10s
             logAudioState('HLS fatal error', `OTHER (${data.details}) — will retry in 10s`);
@@ -485,17 +505,25 @@ const AudioEngine = () => {
           if (!isPlayingRef.current) return;
           if (!audioRef.current?.paused) return;
           
-          audioRef.current.play().then(() => {
-            logAudioState('Auto-resume success');
-          }).catch(() => {
-            attempts++;
-            if (attempts < 60) {
-              setTimeout(autoResume, 1000);
-            } else {
-              logAudioState('Auto-resume gave up after 60s');
-              useRadioStore.getState().setPlaying(false);
-            }
-          });
+          const playPromise = audioRef.current.play();
+          if (playPromise) {
+            playPromise.then(() => {
+              logAudioState('Auto-resume success');
+            }).catch((error) => {
+              if (error.name === 'NotAllowedError') {
+                logAudioState('Auto-resume blocked', 'Awaiting user interaction. Stopping loop.');
+                useRadioStore.getState().setPlaying(false);
+                return;
+              }
+              attempts++;
+              if (attempts < 20) {
+                setTimeout(autoResume, 1500);
+              } else {
+                logAudioState('Auto-resume gave up after 30s');
+                useRadioStore.getState().setPlaying(false);
+              }
+            });
+          }
         };
         setTimeout(autoResume, 1000);
       }

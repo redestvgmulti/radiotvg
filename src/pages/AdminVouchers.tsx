@@ -32,6 +32,7 @@ const AdminVouchers = () => {
   const [acting, setActing] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [editingVoucher, setEditingVoucher] = useState<VoucherRow | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -49,13 +50,37 @@ const AdminVouchers = () => {
 
   useEffect(() => { fetchVouchers(); }, []);
 
-  const updateStatus = async (id: string, status: 'redeemed' | 'cancelled') => {
+  const updateStatus = async (id: string, status: string) => {
     setActing(id);
     const updateData: any = { status };
     if (status === 'redeemed') { updateData.redeemed_at = new Date().toISOString(); updateData.redeemed_by = user?.id; }
+    else if (status === 'pending') { updateData.redeemed_at = null; updateData.redeemed_by = null; }
+
     const { error } = await supabase.from('vouchers').update(updateData).eq('id', id);
     if (error) toast({ title: 'Erro', description: error.message, variant: 'destructive' });
-    else { toast({ title: status === 'redeemed' ? 'Marcado como Utilizado' : 'Voucher Cancelado' }); fetchVouchers(); }
+    else { toast({ title: 'Status Atualizado!' }); fetchVouchers(); }
+    setActing(null);
+  };
+
+  const deleteVoucher = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir permanentemente este voucher?')) return;
+    setActing(id);
+    const { error } = await supabase.from('vouchers').delete().eq('id', id);
+    if (error) toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' });
+    else { toast({ title: 'Voucher Excluído' }); fetchVouchers(); }
+    setActing(null);
+  };
+
+  const saveVoucherEdit = async () => {
+    if (!editingVoucher) return;
+    setActing(editingVoucher.id);
+    const { error } = await supabase.from('vouchers').update({
+      voucher_code: editingVoucher.voucher_code,
+      points_spent: editingVoucher.points_spent
+    }).eq('id', editingVoucher.id);
+
+    if (error) toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
+    else { toast({ title: 'Voucher atualizado' }); setEditingVoucher(null); fetchVouchers(); }
     setActing(null);
   };
 
@@ -162,21 +187,47 @@ const AdminVouchers = () => {
                                 <div className="fixed inset-0 z-10" onClick={() => setOpenMenuId(null)} />
                                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
                                   className="absolute right-8 top-10 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-20 origin-top-right">
-                                  {v.status === 'pending' ? (
+                                  
+                                  {v.status === 'pending' && (
                                     <>
                                       <button onClick={() => { updateStatus(v.id, 'redeemed'); setOpenMenuId(null); }} disabled={acting === v.id}
-                                        className="w-full px-3 py-2 text-[11px] font-medium text-green-700 hover:bg-green-50 flex items-center gap-2 text-left disabled:opacity-50">
+                                        className="w-full px-3 py-2 text-[11px] font-medium text-blue-700 hover:bg-blue-50 flex items-center gap-2 text-left disabled:opacity-50">
                                         <CheckCircle className="h-3.5 w-3.5" /> Marcar como Utilizado
                                       </button>
                                       <div className="h-px bg-slate-100 my-1" />
-                                      <button onClick={() => { updateStatus(v.id, 'cancelled'); setOpenMenuId(null); }} disabled={acting === v.id}
-                                        className="w-full px-3 py-2 text-[11px] font-medium text-red-600 hover:bg-red-50 flex items-center gap-2 text-left disabled:opacity-50">
-                                        <XCircle className="h-3.5 w-3.5" /> Cancelar Voucher
-                                      </button>
                                     </>
-                                  ) : (
-                                    <div className="px-3 py-2 text-[10px] text-slate-400 text-center">Nenhuma ação disponível</div>
                                   )}
+
+                                  {(v.status === 'cancelled' || v.status === 'redeemed' || v.status === 'expired') && (
+                                    <>
+                                      <button onClick={() => { updateStatus(v.id, 'pending'); setOpenMenuId(null); }} disabled={acting === v.id}
+                                        className="w-full px-3 py-2 text-[11px] font-medium text-green-700 hover:bg-green-50 flex items-center gap-2 text-left disabled:opacity-50">
+                                        <CheckCircle className="h-3.5 w-3.5" /> Ativar (Voltar p/ Ativo)
+                                      </button>
+                                      <div className="h-px bg-slate-100 my-1" />
+                                    </>
+                                  )}
+
+                                  {v.status !== 'cancelled' && (
+                                    <>
+                                      <button onClick={() => { updateStatus(v.id, 'cancelled'); setOpenMenuId(null); }} disabled={acting === v.id}
+                                        className="w-full px-3 py-2 text-[11px] font-medium text-orange-600 hover:bg-orange-50 flex items-center gap-2 text-left disabled:opacity-50">
+                                        <XCircle className="h-3.5 w-3.5" /> Desativar / Cancelar
+                                      </button>
+                                      <div className="h-px bg-slate-100 my-1" />
+                                    </>
+                                  )}
+
+                                  <button onClick={() => { setEditingVoucher(v); setOpenMenuId(null); }}
+                                    className="w-full px-3 py-2 text-[11px] font-medium text-indigo-600 hover:bg-indigo-50 flex items-center gap-2 text-left disabled:opacity-50">
+                                    <Ticket className="h-3.5 w-3.5" /> Editar Informações
+                                  </button>
+                                  <div className="h-px bg-slate-100 my-1" />
+
+                                  <button onClick={() => { deleteVoucher(v.id); setOpenMenuId(null); }} disabled={acting === v.id}
+                                    className="w-full px-3 py-2 text-[11px] font-medium text-red-600 hover:bg-red-50 flex items-center gap-2 text-left disabled:opacity-50">
+                                    <XCircle className="h-3.5 w-3.5" /> Excluir
+                                  </button>
                                 </motion.div>
                               </>
                             )}
@@ -193,6 +244,40 @@ const AdminVouchers = () => {
             </div>
           </div>
         )}
+
+        <AnimatePresence>
+          {editingVoucher && (
+            <>
+              <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 transition-opacity" onClick={() => setEditingVoucher(null)} />
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md bg-white rounded-2xl shadow-2xl z-50 overflow-hidden border border-slate-100">
+                <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                  <h3 className="text-sm font-bold text-slate-800">Editar Voucher</h3>
+                  <button onClick={() => setEditingVoucher(null)} className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-slate-200 text-slate-500 transition-colors"><XCircle className="h-5 w-5" /></button>
+                </div>
+                <div className="p-5 space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider">Novo Código / Nome do Voucher</label>
+                    <input type="text" value={editingVoucher.voucher_code} onChange={e => setEditingVoucher({ ...editingVoucher, voucher_code: e.target.value })}
+                      className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors font-mono" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider">Pontos Gastos</label>
+                    <input type="number" value={editingVoucher.points_spent} onChange={e => setEditingVoucher({ ...editingVoucher, points_spent: Number(e.target.value) })}
+                      className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors font-mono" />
+                  </div>
+                  <div className="bg-amber-50 rounded-xl p-3 border border-amber-100 text-amber-800 text-xs">
+                    <strong>Nota:</strong> Informações como Nome de Usuário, E-mail ou Título da Recompensa devem ser editadas nas suas respectivas abas (Usuários ou Recompensas). Aqui modificamos o registro do uso do voucher em si.
+                  </div>
+                  <button onClick={saveVoucherEdit} disabled={acting === editingVoucher.id}
+                    className="w-full h-11 rounded-xl bg-indigo-600 text-white font-semibold text-sm hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center">
+                    {acting === editingVoucher.id ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Salvar Informações'}
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
     </>
   );
