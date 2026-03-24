@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
-import { Copy, Check, Ticket } from 'lucide-react';
-import { useState } from 'react';
+import { Copy, Check, Ticket, Clock, MapPin } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 interface VoucherModalProps {
   open: boolean;
@@ -10,10 +10,38 @@ interface VoucherModalProps {
   protocolNumber: string;
   rewardName: string;
   pointsSpent: number;
+  expiresAt?: string;
 }
 
-const VoucherModal = ({ open, onOpenChange, voucherCode, protocolNumber, rewardName, pointsSpent }: VoucherModalProps) => {
+const VoucherModal = ({ open, onOpenChange, voucherCode, protocolNumber, rewardName, pointsSpent, expiresAt }: VoucherModalProps) => {
   const [copied, setCopied] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<string>('');
+  const [isExpired, setIsExpired] = useState(false);
+
+  useEffect(() => {
+    if (!open || !expiresAt) return;
+    
+    const updateCountdown = () => {
+      const diffMs = new Date(expiresAt).getTime() - Date.now();
+      if (diffMs <= 0) {
+        setIsExpired(true);
+        setTimeLeft('Voucher expirado');
+      } else {
+        setIsExpired(false);
+        const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        
+        if (days > 0) setTimeLeft(`Expira em ${days} dia${days > 1 ? 's' : ''} e ${hours}h`);
+        else if (hours > 0) setTimeLeft(`Expira em ${hours}h e ${minutes}m`);
+        else setTimeLeft(`Últimas horas: ${minutes}m`);
+      }
+    };
+    
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 60000); // update every minute
+    return () => clearInterval(interval);
+  }, [open, expiresAt]);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(voucherCode);
@@ -64,7 +92,7 @@ const VoucherModal = ({ open, onOpenChange, voucherCode, protocolNumber, rewardN
 
           {/* QR Code via API */}
           <div className="flex justify-center">
-            <div className="p-3 bg-white rounded-xl">
+            <div className={`p-3 bg-white rounded-xl ${isExpired ? 'opacity-30 grayscale' : ''}`}>
               <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(voucherCode)}`}
                 alt="QR Code"
@@ -72,6 +100,27 @@ const VoucherModal = ({ open, onOpenChange, voucherCode, protocolNumber, rewardN
                 height={120}
               />
             </div>
+          </div>
+
+          {/* Countdown section */}
+          {expiresAt && (
+            <div className={`py-2 px-3 rounded-xl border flex items-center justify-center gap-2 ${
+              isExpired ? 'bg-red-500/10 border-red-500/20 text-red-600' : 'bg-orange-500/10 border-orange-500/20 text-orange-600'
+            }`}>
+              <Clock className="h-4 w-4" />
+              <span className="text-[11px] font-bold uppercase tracking-wider">{timeLeft}</span>
+            </div>
+          )}
+
+          {/* Fixed location instruction */}
+          <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-1">
+            <div className="flex items-center gap-1.5 text-slate-700 font-semibold mb-1">
+              <MapPin className="h-4 w-4 text-primary" />
+              <span className="text-xs">Local de Retirada / Resgate</span>
+            </div>
+            <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
+              Resgate o seu voucher na <strong>TVG Multi</strong> - Rua São Francisco, nº573, Apto 2 - Centro.
+            </p>
           </div>
 
           {/* Details */}

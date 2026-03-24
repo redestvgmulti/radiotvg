@@ -442,6 +442,7 @@ export type Database = {
       vouchers: {
         Row: {
           created_at: string | null
+          expires_at: string
           id: string
           points_spent: number
           protocol_number: string
@@ -455,6 +456,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          expires_at?: string
           id?: string
           points_spent: number
           protocol_number: string
@@ -468,6 +470,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          expires_at?: string
           id?: string
           points_spent?: number
           protocol_number?: string
@@ -507,6 +510,7 @@ export type Database = {
           created_at: string
           display_name: string
           email: string
+          expires_at: string
           id: string
           points_spent: number
           protocol_number: string
@@ -532,6 +536,7 @@ export type Database = {
           created_at: string
           display_name: string
           email: string
+          expires_at: string
           points_spent: number
           protocol_number: string
           redeemed_at: string

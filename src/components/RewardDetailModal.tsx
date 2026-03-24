@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Gift, Loader2, X, Info, AlertCircle, Calendar } from 'lucide-react';
+import { Gift, Loader2, X, Info, AlertCircle, Calendar, Clock, MapPin } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 interface Reward {
@@ -137,6 +137,23 @@ const RewardDetailModal = ({
               </div>
             </div>
           )}
+          
+          {/* Fixed expiration and location info */}
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center gap-2 text-xs text-orange-600 bg-orange-500/10 px-3 py-2.5 rounded-xl border border-orange-500/20">
+              <Clock className="h-4 w-4 flex-shrink-0" />
+              <span>Voucher gerado terá <strong>validade de 7 dias</strong> após o resgate.</span>
+            </div>
+            
+            <div className="flex items-start gap-2 text-xs text-slate-600 bg-slate-50 px-3 py-2.5 rounded-xl border border-slate-100">
+              <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+              <div className="leading-relaxed">
+                <strong>Local de Retirada / Resgate fixo:</strong>
+                <br />
+                TVG Multi - Rua São Francisco, nº573, Apto 2 - Centro.
+              </div>
+            </div>
+          </div>
           
           {/* Weekly reminder visually for user info */}
           <div className="flex items-start gap-2 px-1 text-xs text-muted-foreground">

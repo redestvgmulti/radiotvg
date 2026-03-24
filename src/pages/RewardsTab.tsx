@@ -39,7 +39,7 @@ const RewardsTab = () => {
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [termsModalOpen, setTermsModalOpen] = useState(false);
   const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
-  const [voucherModal, setVoucherModal] = useState<{ open: boolean; code: string; protocol: string; rewardName: string; points: number }>({ open: false, code: '', protocol: '', rewardName: '', points: 0 });
+  const [voucherModal, setVoucherModal] = useState<{ open: boolean; code: string; protocol: string; rewardName: string; points: number; expiresAt?: string }>({ open: false, code: '', protocol: '', rewardName: '', points: 0 });
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -101,6 +101,7 @@ const RewardsTab = () => {
       protocol: result.protocol_number,
       rewardName: reward.name,
       points: reward.points_cost,
+      expiresAt: result.expires_at,
     });
     setRedeeming(null);
   };
@@ -211,6 +212,7 @@ const RewardsTab = () => {
         protocolNumber={voucherModal.protocol}
         rewardName={voucherModal.rewardName}
         pointsSpent={voucherModal.points}
+        expiresAt={voucherModal.expiresAt}
       />
       <RewardTermsModal 
         open={termsModalOpen} 
