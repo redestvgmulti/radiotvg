@@ -148,20 +148,76 @@ const AdminRewards = () => {
       <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 py-6 space-y-3">
         <AnimatePresence>
           {showCreate && (
-            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-              <div className="p-4 rounded-xl bg-white border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] space-y-3 mb-4">
-                <p className="text-xs font-semibold text-slate-600">Nova Recompensa</p>
-                <InputField label="Nome" value={createForm.name} onChange={v => setCreateForm({ ...createForm, name: v })} placeholder="Nome da recompensa" />
-                <TextAreaField label="Descrição (Obrigatório)" value={createForm.descricao} onChange={v => setCreateForm({ ...createForm, descricao: v })} placeholder="O que o usuário ganha? (Ex: 10% OFF na loja)" />
-                <ImageUploadField imageUrl={createForm.image_url} onUrlChange={url => setCreateForm({ ...createForm, image_url: url })} uploadKey="new-reward" uploading={uploading} onUpload={uploadImage} />
-                <TextAreaField label="Instruções de Resgate (Obrigatório)" value={createForm.instrucoes_resgate} onChange={v => setCreateForm({ ...createForm, instrucoes_resgate: v })} placeholder="Como usar o voucher?" rows={4} />
-                <TextAreaField label="Observações (Opcional)" value={createForm.observacoes} onChange={v => setCreateForm({ ...createForm, observacoes: v })} placeholder="Restrições, validade, etc." rows={2} />
-                <InputField label="Pontos Necessários" value={String(createForm.points_cost)} onChange={v => setCreateForm({ ...createForm, points_cost: Number(v) || 0 })} type="number" />
-                <InputField label="Parceiro" value={createForm.partner} onChange={v => setCreateForm({ ...createForm, partner: v })} placeholder="Nome do parceiro" />
-                <button onClick={handleCreate} disabled={creating || !createForm.name}
-                  className="w-full h-9 rounded-lg bg-pink-500 text-white font-semibold text-xs flex items-center justify-center gap-2 disabled:opacity-60 hover:bg-pink-600 transition-colors shadow-sm">
-                  {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Criar Recompensa'}
-                </button>
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mb-6">
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
+                {/* Formulário */}
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4">
+                  <p className="text-sm font-bold text-slate-800 pb-2 border-b border-slate-100">Nova Recompensa</p>
+                  <InputField label="Nome" value={createForm.name} onChange={v => setCreateForm({ ...createForm, name: v })} placeholder="Ex: Copo Térmico Personalizado" />
+                  <TextAreaField label="Descrição (Obrigatório)" value={createForm.descricao} onChange={v => setCreateForm({ ...createForm, descricao: v })} placeholder="O que o usuário ganha? (Ex: 10% OFF na loja)" />
+                  <ImageUploadField imageUrl={createForm.image_url} onUrlChange={url => setCreateForm({ ...createForm, image_url: url })} uploadKey="new-reward" uploading={uploading} onUpload={uploadImage} />
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <InputField label="Pontos Necessários" value={String(createForm.points_cost)} onChange={v => setCreateForm({ ...createForm, points_cost: Number(v) || 0 })} type="number" />
+                    <InputField label="Parceiro (Opcional)" value={createForm.partner} onChange={v => setCreateForm({ ...createForm, partner: v })} placeholder="Ex: TVG Multi" />
+                  </div>
+                  
+                  <TextAreaField label="Instruções de Resgate (Obrigatório)" value={createForm.instrucoes_resgate} onChange={v => setCreateForm({ ...createForm, instrucoes_resgate: v })} placeholder="Como usar o voucher?" rows={3} />
+                  <TextAreaField label="Observações (Opcional)" value={createForm.observacoes} onChange={v => setCreateForm({ ...createForm, observacoes: v })} placeholder="Restrições, validade, etc." rows={2} />
+                  
+                  <button onClick={handleCreate} disabled={creating || !createForm.name}
+                    className="w-full h-11 rounded-xl bg-pink-500 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-pink-600 transition-colors shadow-sm">
+                    {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Cadastrar Recompensa'}
+                  </button>
+                </div>
+
+                {/* Live Preview */}
+                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/60 flex flex-col items-center">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 w-full text-center">Prévia em Tempo Real</p>
+                  
+                  <div className="w-[280px] flex flex-col rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden mb-4">
+                    <div className="relative h-36 bg-slate-100 border-b border-slate-100">
+                      {createForm.image_url ? (
+                        <img src={createForm.image_url} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-300">
+                          <Gift className="h-8 w-8 mb-1 opacity-50" />
+                          <span className="text-[10px] uppercase font-bold tracking-wider opacity-70">Sem Imagem</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4 flex-1 flex flex-col min-h-[100px]">
+                      <p className="text-sm font-bold text-slate-800 line-clamp-2 mb-3 leading-snug">
+                        {createForm.name || 'Nome da Recompensa'}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-2 mt-auto">
+                        <span className="text-[11px] font-black text-pink-600 bg-pink-50 px-2 py-0.5 rounded-full border border-pink-100">
+                          {createForm.points_cost || 0} pts
+                        </span>
+                        {createForm.partner && (
+                          <span className="text-[10px] text-slate-500 truncate mt-0.5 flex items-center max-w-[120px]">
+                            · {createForm.partner}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Preview of internal Details Modal */}
+                  <div className="w-[280px] p-4 bg-white border border-slate-200 shadow-sm rounded-2xl space-y-3 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-blue-500/20" />
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Simulação do Modal</p>
+                    <p className="text-[11px] text-slate-600 line-clamp-3 leading-relaxed">
+                      {createForm.descricao || 'Comece a digitar a descrição do benefício...'}
+                    </p>
+                    {createForm.observacoes && (
+                      <p className="text-[10px] text-orange-600/80 line-clamp-2 italic border-l-2 border-orange-200 pl-2">
+                        {createForm.observacoes}
+                      </p>
+                    )}
+                  </div>
+
+                </div>
               </div>
             </motion.div>
           )}
@@ -181,35 +237,38 @@ const AdminRewards = () => {
                 className={`flex flex-col rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden ${!r.is_active ? 'opacity-50 grayscale-[30%]' : ''}`}>
                 
                 {/* Visual Area */}
-                <div className="relative h-32 bg-slate-100 border-b border-slate-100 group">
-                  {r.image_url ? (
-                    <img src={r.image_url} alt={r.name} className="w-full h-full object-cover" />
+                <div className="relative h-36 bg-slate-100 border-b border-slate-100 group">
+                  {(editingId === r.id ? editForm.image_url : r.image_url) ? (
+                    <img src={(editingId === r.id ? editForm.image_url : r.image_url)} alt={r.name} className="w-full h-full object-cover transition-all" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-300"><Gift className="h-8 w-8" /></div>
+                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-300">
+                      <Gift className="h-8 w-8 mb-1 opacity-50" />
+                      <span className="text-[10px] uppercase font-bold tracking-wider opacity-70">Sem Imagem</span>
+                    </div>
                   )}
                   {/* Action overlay */}
-                  <div className="absolute top-2 right-2 flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => toggleActive(r)} disabled={saving === r.id}
-                      className={`h-7 w-7 rounded-md flex items-center justify-center transition-colors shadow-sm backdrop-blur-md ${r.is_active ? 'bg-green-500/90 text-white hover:bg-green-600' : 'bg-slate-600/90 text-white hover:bg-slate-700'}`}>
-                      <Power className="h-3.5 w-3.5" />
+                  <div className="absolute top-2 right-2 flex gap-1.5 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => toggleActive(r)} disabled={saving === r.id || editingId === r.id}
+                      className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors shadow-sm backdrop-blur-md ${r.is_active ? 'bg-green-500/90 text-white hover:bg-green-600' : 'bg-slate-700/90 text-white hover:bg-slate-800'}`}>
+                      <Power className="h-4 w-4" />
                     </button>
                     <button onClick={() => editingId === r.id ? cancelEdit() : startEdit(r)}
-                      className={`h-7 w-7 rounded-md flex items-center justify-center transition-colors shadow-sm backdrop-blur-md ${editingId === r.id ? 'bg-blue-500/90 text-white' : 'bg-slate-800/80 text-white hover:bg-slate-900'}`}>
-                      {editingId === r.id ? <X className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
+                      className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors shadow-sm backdrop-blur-md ${editingId === r.id ? 'bg-blue-500/90 text-white' : 'bg-slate-800/80 text-white hover:bg-slate-900'}`}>
+                      {editingId === r.id ? <X className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
                     </button>
-                    <button onClick={() => deleteReward(r)} disabled={saving === r.id}
-                      className="h-7 w-7 rounded-md flex items-center justify-center bg-red-500/90 shadow-sm backdrop-blur-md text-white hover:bg-red-600 transition-colors">
-                      <Trash2 className="h-3.5 w-3.5" />
+                    <button onClick={() => deleteReward(r)} disabled={saving === r.id || editingId === r.id}
+                      className="h-8 w-8 rounded-lg flex items-center justify-center bg-red-500/90 shadow-sm backdrop-blur-md text-white hover:bg-red-600 transition-colors">
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
 
                 {/* Content Area */}
-                <div className="p-3 flex-1 flex flex-col">
-                  <p className="text-sm font-bold text-slate-800 truncate mb-2">{r.name}</p>
-                  <div className="flex flex-wrap items-center gap-2 mb-2 mt-auto">
-                    <span className="text-[11px] font-black text-pink-600 bg-pink-50 px-2 py-0.5 rounded-full">{r.points_cost} pts</span>
-                    {r.partner && <span className="text-[10px] text-slate-500 truncate mt-0.5 flex items-center max-w-[100px]">· {r.partner}</span>}
+                <div className="p-4 flex-1 flex flex-col bg-white">
+                  <p className="text-sm font-bold text-slate-800 line-clamp-2 mb-3 leading-snug">{editingId === r.id ? editForm.name : r.name}</p>
+                  <div className="flex flex-wrap items-center gap-2 mb-1 mt-auto">
+                    <span className="text-[11px] font-black text-pink-600 bg-pink-50 px-2.5 py-1 rounded-full border border-pink-100">{editingId === r.id ? editForm.points_cost : r.points_cost} pts</span>
+                    {(editingId === r.id ? editForm.partner : r.partner) && <span className="text-[10px] text-slate-500 truncate mt-0.5 flex items-center max-w-[120px]">· {editingId === r.id ? editForm.partner : r.partner}</span>}
                   </div>
                 </div>
 

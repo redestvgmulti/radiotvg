@@ -28,6 +28,7 @@ interface Voucher {
   points_spent: number;
   status: string;
   created_at: string;
+  expires_at: string;
   rewards: { name: string } | null;
 }
 
@@ -54,7 +55,7 @@ const PerfilTab = () => {
         supabase.from('profiles').select('display_name, avatar_url, total_points, total_listening_minutes').eq('user_id', user.id).single(),
         supabase.from('redemptions').select('*').eq('user_id', user.id).order('redeemed_at', { ascending: false }).limit(10),
         supabase.from('profiles').select('user_id').order('total_points', { ascending: false }).order('total_listening_minutes', { ascending: false }).order('created_at', { ascending: true }),
-        supabase.from('vouchers').select('id, voucher_code, protocol_number, points_spent, status, created_at, rewards(name)').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
+        supabase.from('vouchers').select('id, voucher_code, protocol_number, points_spent, status, created_at, expires_at, rewards(name)').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
       ]);
       setProfile(profileRes.data as Profile | null);
       setRedemptions((redemptionsRes.data as Redemption[]) || []);
@@ -243,17 +244,24 @@ const PerfilTab = () => {
               </p>
               <div className="space-y-2">
                 {vouchers.map(v => {
+                  let computedStatus = v.status;
+                  if (computedStatus === 'pending' && new Date(v.expires_at) < new Date()) {
+                    computedStatus = 'expired';
+                  }
+
                   const statusMap: Record<string, { label: string; cls: string }> = {
                     pending: { label: 'Ativo', cls: 'bg-green-500/10 text-green-500 border-green-500/20' },
                     redeemed: { label: 'Utilizado', cls: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
-                    expired: { label: 'Expirado', cls: 'bg-muted text-muted-foreground border-border' },
+                    expired: { label: 'Expirado', cls: 'bg-muted-foreground/10 text-muted-foreground border-border' },
                     cancelled: { label: 'Cancelado', cls: 'bg-destructive/10 text-destructive border-destructive/20' },
                   };
-                  const st = statusMap[v.status] || statusMap.pending;
+                  const st = statusMap[computedStatus] || statusMap.pending;
+                  const isDisabled = computedStatus === 'expired' || computedStatus === 'cancelled';
+
                   return (
-                    <div key={v.id} className="px-4 py-3 rounded-xl bg-card/50 border border-white/[0.04]">
+                    <div key={v.id} className={`px-4 py-3 rounded-xl bg-card/50 border border-white/[0.04] transition-all ${isDisabled ? 'opacity-50 grayscale' : ''}`}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-mono text-sm font-bold text-foreground">{v.voucher_code}</span>
+                        <span className={`font-mono text-sm font-bold ${isDisabled ? 'text-muted-foreground line-through decoration-1' : 'text-foreground'}`}>{v.voucher_code}</span>
                         <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${st.cls}`}>{st.label}</span>
                       </div>
                       <p className="text-[10px] text-muted-foreground font-mono mb-0.5">{v.protocol_number}</p>
