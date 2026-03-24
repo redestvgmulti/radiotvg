@@ -472,14 +472,8 @@ const AudioEngine = () => {
       if (activeSourceType.current === 'hls' && hlsRef.current) {
         hlsRef.current.startLoad();
       } else if (audioRef.current && activeSourceType.current !== 'youtube') {
-        const currentSrc = audioRef.current.src;
-        audioRef.current.src = '';
-        setTimeout(() => {
-          if (audioRef.current) {
-            audioRef.current.src = currentSrc;
-            if (isPlayingRef.current) audioRef.current.play().catch(() => {});
-          }
-        }, 500);
+        audioRef.current.load();
+        if (isPlayingRef.current) audioRef.current.play().catch(() => {});
       }
     };
 
@@ -493,6 +487,11 @@ const AudioEngine = () => {
       setStreamError(null); 
       logAudioState('audio playing');
       clearStallRecovery();
+      if (hlsRetryTimeoutRef.current) {
+        clearTimeout(hlsRetryTimeoutRef.current);
+        hlsRetryTimeoutRef.current = null;
+        isRetryingRef.current = false;
+      }
     };
     const onPause = () => {
       logAudioState('audio pause');
@@ -587,9 +586,7 @@ const AudioEngine = () => {
             // If it's a direct stream and we had a long OS pause, the buffer might be stale or broken
             // A quick re-assignment fixes the "infinite silence" issue after phone calls
             if (!useRadioStore.getState().getCurrentStreamUrl()?.includes('.m3u8')) {
-               const currentSrc = audioRef.current.src;
-               audioRef.current.src = '';
-               audioRef.current.src = currentSrc;
+               audioRef.current.load();
             }
             
             audioRef.current.play().catch(() => {});
