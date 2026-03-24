@@ -68,7 +68,7 @@ const RewardDetailModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md mx-auto p-0 rounded-3xl overflow-hidden border-border bg-card [&>button]:hidden">
+      <DialogContent className="w-[92vw] max-w-md mx-auto sm:w-full p-0 rounded-3xl overflow-hidden border-border bg-card [&>button]:hidden shadow-2xl">
         {/* Close Button Overlay */}
         <button 
           onClick={() => onOpenChange(false)}
@@ -140,16 +140,17 @@ const RewardDetailModal = ({
           
           {/* Fixed expiration and location info */}
           <div className="space-y-3 pt-2">
-            <div className="flex items-center gap-2 text-xs text-orange-600 bg-orange-500/10 px-3 py-2.5 rounded-xl border border-orange-500/20">
-              <Clock className="h-4 w-4 flex-shrink-0" />
-              <span>Voucher gerado terá <strong>validade de 7 dias</strong> após o resgate.</span>
+            <div className="flex items-start gap-3 p-4 rounded-2xl bg-orange-500/10 border border-orange-500/20 text-orange-500 text-sm">
+              <Clock className="h-5 w-5 flex-shrink-0 mt-0.5" />
+              <div className="leading-relaxed">
+                Voucher gerado terá <strong>validade de 7 dias</strong> após o resgate.
+              </div>
             </div>
             
-            <div className="flex items-start gap-2 text-xs text-slate-600 bg-slate-50 px-3 py-2.5 rounded-xl border border-slate-100">
-              <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+            <div className="flex items-start gap-3 p-4 rounded-2xl bg-muted/50 border border-border text-sm text-foreground/80">
+              <MapPin className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
               <div className="leading-relaxed">
-                <strong>Local de Retirada / Resgate fixo:</strong>
-                <br />
+                <strong className="text-foreground block mb-1">Local de Retirada / Resgate fixo:</strong>
                 TVG Multi - Rua São Francisco, nº573, Apto 2 - Centro.
               </div>
             </div>

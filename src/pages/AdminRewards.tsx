@@ -67,8 +67,8 @@ const AdminRewards = () => {
   };
 
   const handleCreate = async () => {
-    if (!createForm.name || !createForm.descricao || !createForm.instrucoes_resgate) {
-      toast({ title: 'Atenção', description: 'Preencha nome, descrição e instruções de resgate.', variant: 'destructive' });
+    if (!createForm.name || !createForm.descricao) {
+      toast({ title: 'Atenção', description: 'Preencha nome e descrição.', variant: 'destructive' });
       return;
     }
     setCreating(true);
@@ -86,8 +86,8 @@ const AdminRewards = () => {
 
   const saveEdit = async () => {
     if (!editingId) return; 
-    if (!editForm.name || !editForm.descricao || !editForm.instrucoes_resgate) {
-      toast({ title: 'Atenção', description: 'Nome, descrição e instruções são obrigatórios.', variant: 'destructive' });
+    if (!editForm.name || !editForm.descricao) {
+      toast({ title: 'Atenção', description: 'Nome e descrição são obrigatórios.', variant: 'destructive' });
       return; 
     }
     setSaving(editingId);
@@ -162,7 +162,7 @@ const AdminRewards = () => {
                     <InputField label="Parceiro (Opcional)" value={createForm.partner} onChange={v => setCreateForm({ ...createForm, partner: v })} placeholder="Ex: TVG Multi" />
                   </div>
                   
-                  <TextAreaField label="Instruções de Resgate (Obrigatório)" value={createForm.instrucoes_resgate} onChange={v => setCreateForm({ ...createForm, instrucoes_resgate: v })} placeholder="Como usar o voucher?" rows={3} />
+                  <TextAreaField label="Instruções de Resgate (Opcional)" value={createForm.instrucoes_resgate} onChange={v => setCreateForm({ ...createForm, instrucoes_resgate: v })} placeholder="Como usar o voucher?" rows={3} />
                   <TextAreaField label="Observações (Opcional)" value={createForm.observacoes} onChange={v => setCreateForm({ ...createForm, observacoes: v })} placeholder="Restrições, validade, etc." rows={2} />
                   
                   <button onClick={handleCreate} disabled={creating || !createForm.name}
@@ -279,7 +279,7 @@ const AdminRewards = () => {
                         <InputField label="Nome" value={editForm.name || ''} onChange={v => setEditForm({ ...editForm, name: v })} />
                         <TextAreaField label="Descrição (Obrigatório)" value={editForm.descricao || ''} onChange={v => setEditForm({ ...editForm, descricao: v })} />
                         <ImageUploadField imageUrl={editForm.image_url || ''} onUrlChange={url => setEditForm({ ...editForm, image_url: url })} uploadKey={r.id} uploading={uploading} onUpload={uploadImage} />
-                        <TextAreaField label="Instruções de Resgate (Obrigatório)" value={editForm.instrucoes_resgate || ''} onChange={v => setEditForm({ ...editForm, instrucoes_resgate: v })} rows={4} />
+                        <TextAreaField label="Instruções de Resgate (Opcional)" value={editForm.instrucoes_resgate || ''} onChange={v => setEditForm({ ...editForm, instrucoes_resgate: v })} rows={4} />
                         <TextAreaField label="Observações (Opcional)" value={editForm.observacoes || ''} onChange={v => setEditForm({ ...editForm, observacoes: v })} rows={2} />
                         <InputField label="Pontos Necessários" value={String(editForm.points_cost || 0)} onChange={v => setEditForm({ ...editForm, points_cost: Number(v) || 0 })} type="number" />
                         <InputField label="Parceiro" value={editForm.partner || ''} onChange={v => setEditForm({ ...editForm, partner: v })} placeholder="Nome do parceiro" />

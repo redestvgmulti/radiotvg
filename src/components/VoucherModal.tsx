@@ -51,7 +51,7 @@ const VoucherModal = ({ open, onOpenChange, voucherCode, protocolNumber, rewardN
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm mx-auto rounded-3xl border-primary/20 bg-card p-0 overflow-hidden">
+      <DialogContent className="w-[92vw] max-w-sm mx-auto sm:w-full rounded-3xl border-primary/20 bg-card p-0 overflow-hidden shadow-2xl">
         {/* Header gradient */}
         <div className="bg-gradient-to-br from-primary/20 to-accent/10 px-6 pt-6 pb-4 text-center">
           <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto mb-3">
@@ -113,18 +113,18 @@ const VoucherModal = ({ open, onOpenChange, voucherCode, protocolNumber, rewardN
           )}
 
           {/* Fixed location instruction */}
-          <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-1">
-            <div className="flex items-center gap-1.5 text-slate-700 font-semibold mb-1">
+          <div className="p-4 bg-muted/30 border border-border rounded-xl space-y-1 mt-4">
+            <div className="flex items-center gap-2 text-foreground font-semibold mb-1">
               <MapPin className="h-4 w-4 text-primary" />
               <span className="text-xs">Local de Retirada / Resgate</span>
             </div>
-            <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
+            <p className="text-[11px] text-foreground/80 font-medium leading-relaxed">
               Resgate o seu voucher na <strong>TVG Multi</strong> - Rua São Francisco, nº573, Apto 2 - Centro.
             </p>
           </div>
 
           {/* Details */}
-          <div className="space-y-2">
+          <div className="space-y-2 mt-4 pt-4 border-t border-border/50">
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Protocolo</span>
               <span className="font-mono font-semibold text-foreground">{protocolNumber}</span>
