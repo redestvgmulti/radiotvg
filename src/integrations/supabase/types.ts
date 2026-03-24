@@ -343,28 +343,37 @@ export type Database = {
       rewards: {
         Row: {
           created_at: string
+          descricao: string
           id: string
           image_url: string
+          instrucoes_resgate: string
           is_active: boolean
           name: string
+          observacoes: string | null
           partner: string
           points_cost: number
         }
         Insert: {
           created_at?: string
+          descricao?: string
           id?: string
           image_url?: string
+          instrucoes_resgate?: string
           is_active?: boolean
           name: string
+          observacoes?: string | null
           partner?: string
           points_cost?: number
         }
         Update: {
           created_at?: string
+          descricao?: string
           id?: string
           image_url?: string
+          instrucoes_resgate?: string
           is_active?: boolean
           name?: string
+          observacoes?: string | null
           partner?: string
           points_cost?: number
         }

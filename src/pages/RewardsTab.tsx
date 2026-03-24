@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import VoucherModal from '@/components/VoucherModal';
 import RewardTermsModal from '@/components/RewardTermsModal';
+import RewardDetailModal from '@/components/RewardDetailModal';
 import { startOfWeek } from 'date-fns';
 
 const CURRENT_REWARD_TERMS_VERSION = "v1";
@@ -17,6 +18,9 @@ interface Reward {
   image_url: string;
   points_cost: number;
   partner: string;
+  descricao: string;
+  instrucoes_resgate: string;
+  observacoes: string;
 }
 
 interface RankEntry {
@@ -34,6 +38,7 @@ const RewardsTab = () => {
   const [loading, setLoading] = useState(true);
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [termsModalOpen, setTermsModalOpen] = useState(false);
+  const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
   const [voucherModal, setVoucherModal] = useState<{ open: boolean; code: string; protocol: string; rewardName: string; points: number }>({ open: false, code: '', protocol: '', rewardName: '', points: 0 });
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -72,7 +77,8 @@ const RewardsTab = () => {
   const handleRedeem = async (reward: Reward) => {
     if (!user) { navigate('/login'); return; }
     if (userPoints < reward.points_cost) { toast({ title: 'Pontos insuficientes', variant: 'destructive' }); return; }
-    if (!confirm(`Trocar ${reward.points_cost} pontos por "${reward.name}"?`)) return;
+    
+    // O modal RewardDetailModal agora atua como confirmação.
 
     setRedeeming(reward.id);
     const { data, error } = await supabase.rpc('redeem_reward_voucher', {
@@ -87,6 +93,8 @@ const RewardsTab = () => {
 
     const result = data as any;
     setUserPoints(result.remaining_points);
+    setRedeemedRewardIds(prev => new Set([...Array.from(prev), reward.id]));
+    setSelectedReward(null);
     setVoucherModal({
       open: true,
       code: result.voucher_code,
@@ -146,20 +154,24 @@ const RewardsTab = () => {
                     ) : (
                       <div className="w-full h-28 bg-muted flex items-center justify-center"><Gift className="h-8 w-8 text-muted-foreground/20" /></div>
                     )}
-                    <div className="p-3">
+                    <div className="p-4 flex flex-col flex-1 cursor-pointer" onClick={() => setSelectedReward(r)}>
                       <p className="text-sm font-semibold text-foreground truncate">{r.name}</p>
-                      {r.partner && <p className="text-[10px] text-muted-foreground mt-0.5">{r.partner}</p>}
-                      <div className="flex items-center justify-between mt-2">
+                      {r.descricao && (
+                        <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+                          {r.descricao}
+                        </p>
+                      )}
+                      
+                      <div className="flex items-center justify-between mt-auto pt-3">
                         <span className="text-xs font-bold text-primary">{r.points_cost} pts</span>
                         {redeemedRewardIds.has(r.id) ? (
                           <span className="h-7 px-3 rounded-lg bg-green-500/10 text-green-600 text-[10px] font-bold flex items-center justify-center text-center">
                             Resgatado esta semana
                           </span>
                         ) : (
-                          <motion.button whileTap={{ scale: 0.95 }} onClick={() => handleRedeem(r)} disabled={redeeming === r.id}
-                            className="h-7 px-3 rounded-lg bg-primary text-primary-foreground text-[10px] font-bold disabled:opacity-60 flex items-center justify-center">
-                            {redeeming === r.id ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Trocar'}
-                          </motion.button>
+                          <span className="h-7 px-3 rounded-lg bg-secondary text-secondary-foreground text-[10px] font-bold flex items-center justify-center hover:bg-secondary/80 transition-colors">
+                            Ver detalhes
+                          </span>
                         )}
                       </div>
                     </div>
@@ -204,6 +216,17 @@ const RewardsTab = () => {
         open={termsModalOpen} 
         onAccept={() => setTermsModalOpen(false)} 
         termsVersion={CURRENT_REWARD_TERMS_VERSION} 
+      />
+      <RewardDetailModal 
+        reward={selectedReward}
+        open={!!selectedReward}
+        onOpenChange={(open) => !open && setSelectedReward(null)}
+        userPoints={userPoints}
+        isRedeemedThisWeek={selectedReward ? redeemedRewardIds.has(selectedReward.id) : false}
+        isRedeeming={redeeming === selectedReward?.id}
+        onRedeem={handleRedeem}
+        onRequiresTerms={() => setTermsModalOpen(true)}
+        hasAcceptedTerms={!termsModalOpen}
       />
     </motion.div>
   );

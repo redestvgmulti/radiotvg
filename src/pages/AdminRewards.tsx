@@ -4,7 +4,7 @@ import { ArrowLeft, Plus, Save, Loader2, Power, Pencil, X, Trash2, Gift, Downloa
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { InputField, ImageUploadField } from '@/components/admin/AdminFormFields';
+import { InputField, ImageUploadField, TextAreaField } from '@/components/admin/AdminFormFields';
 
 interface Reward {
   id: string;
@@ -13,6 +13,9 @@ interface Reward {
   points_cost: number;
   partner: string;
   is_active: boolean;
+  descricao: string;
+  instrucoes_resgate: string;
+  observacoes: string;
 }
 
 const AdminRewards = () => {
@@ -22,7 +25,7 @@ const AdminRewards = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Reward>>({});
   const [showCreate, setShowCreate] = useState(false);
-  const [createForm, setCreateForm] = useState({ name: '', image_url: '', points_cost: 100, partner: '' });
+  const [createForm, setCreateForm] = useState({ name: '', image_url: '', points_cost: 100, partner: '', descricao: '', instrucoes_resgate: '', observacoes: '' });
   const [creating, setCreating] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
   
@@ -64,10 +67,17 @@ const AdminRewards = () => {
   };
 
   const handleCreate = async () => {
-    if (!createForm.name) return; setCreating(true);
-    const { error } = await supabase.from('rewards').insert({ name: createForm.name, image_url: createForm.image_url, points_cost: createForm.points_cost, partner: createForm.partner });
+    if (!createForm.name || !createForm.descricao || !createForm.instrucoes_resgate) {
+      toast({ title: 'Atenção', description: 'Preencha nome, descrição e instruções de resgate.', variant: 'destructive' });
+      return;
+    }
+    setCreating(true);
+    const { error } = await supabase.from('rewards').insert({ 
+      name: createForm.name, image_url: createForm.image_url, points_cost: createForm.points_cost, partner: createForm.partner,
+      descricao: createForm.descricao, instrucoes_resgate: createForm.instrucoes_resgate, observacoes: createForm.observacoes || null
+    });
     if (error) toast({ title: 'Erro', description: error.message, variant: 'destructive' });
-    else { toast({ title: 'Recompensa criada!' }); setCreateForm({ name: '', image_url: '', points_cost: 100, partner: '' }); setShowCreate(false); fetchRewards(); }
+    else { toast({ title: 'Recompensa criada!' }); setCreateForm({ name: '', image_url: '', points_cost: 100, partner: '', descricao: '', instrucoes_resgate: '', observacoes: '' }); setShowCreate(false); fetchRewards(); }
     setCreating(false);
   };
 
@@ -75,8 +85,16 @@ const AdminRewards = () => {
   const cancelEdit = () => { setEditingId(null); setEditForm({}); };
 
   const saveEdit = async () => {
-    if (!editingId) return; setSaving(editingId);
-    const { error } = await supabase.from('rewards').update({ name: editForm.name, image_url: editForm.image_url, points_cost: editForm.points_cost, partner: editForm.partner }).eq('id', editingId);
+    if (!editingId) return; 
+    if (!editForm.name || !editForm.descricao || !editForm.instrucoes_resgate) {
+      toast({ title: 'Atenção', description: 'Nome, descrição e instruções são obrigatórios.', variant: 'destructive' });
+      return; 
+    }
+    setSaving(editingId);
+    const { error } = await supabase.from('rewards').update({ 
+      name: editForm.name, image_url: editForm.image_url, points_cost: editForm.points_cost, partner: editForm.partner,
+      descricao: editForm.descricao, instrucoes_resgate: editForm.instrucoes_resgate, observacoes: editForm.observacoes || null
+    }).eq('id', editingId);
     if (error) toast({ title: 'Erro', description: error.message, variant: 'destructive' });
     else { toast({ title: 'Salvo!' }); cancelEdit(); fetchRewards(); }
     setSaving(null);
@@ -134,7 +152,10 @@ const AdminRewards = () => {
               <div className="p-4 rounded-xl bg-white border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] space-y-3 mb-4">
                 <p className="text-xs font-semibold text-slate-600">Nova Recompensa</p>
                 <InputField label="Nome" value={createForm.name} onChange={v => setCreateForm({ ...createForm, name: v })} placeholder="Nome da recompensa" />
+                <TextAreaField label="Descrição (Obrigatório)" value={createForm.descricao} onChange={v => setCreateForm({ ...createForm, descricao: v })} placeholder="O que o usuário ganha? (Ex: 10% OFF na loja)" />
                 <ImageUploadField imageUrl={createForm.image_url} onUrlChange={url => setCreateForm({ ...createForm, image_url: url })} uploadKey="new-reward" uploading={uploading} onUpload={uploadImage} />
+                <TextAreaField label="Instruções de Resgate (Obrigatório)" value={createForm.instrucoes_resgate} onChange={v => setCreateForm({ ...createForm, instrucoes_resgate: v })} placeholder="Como usar o voucher?" rows={4} />
+                <TextAreaField label="Observações (Opcional)" value={createForm.observacoes} onChange={v => setCreateForm({ ...createForm, observacoes: v })} placeholder="Restrições, validade, etc." rows={2} />
                 <InputField label="Pontos Necessários" value={String(createForm.points_cost)} onChange={v => setCreateForm({ ...createForm, points_cost: Number(v) || 0 })} type="number" />
                 <InputField label="Parceiro" value={createForm.partner} onChange={v => setCreateForm({ ...createForm, partner: v })} placeholder="Nome do parceiro" />
                 <button onClick={handleCreate} disabled={creating || !createForm.name}
@@ -197,7 +218,10 @@ const AdminRewards = () => {
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
                       <div className="px-4 pb-4 pt-3 space-y-3 border-t border-slate-100 bg-slate-50/50">
                         <InputField label="Nome" value={editForm.name || ''} onChange={v => setEditForm({ ...editForm, name: v })} />
+                        <TextAreaField label="Descrição (Obrigatório)" value={editForm.descricao || ''} onChange={v => setEditForm({ ...editForm, descricao: v })} />
                         <ImageUploadField imageUrl={editForm.image_url || ''} onUrlChange={url => setEditForm({ ...editForm, image_url: url })} uploadKey={r.id} uploading={uploading} onUpload={uploadImage} />
+                        <TextAreaField label="Instruções de Resgate (Obrigatório)" value={editForm.instrucoes_resgate || ''} onChange={v => setEditForm({ ...editForm, instrucoes_resgate: v })} rows={4} />
+                        <TextAreaField label="Observações (Opcional)" value={editForm.observacoes || ''} onChange={v => setEditForm({ ...editForm, observacoes: v })} rows={2} />
                         <InputField label="Pontos Necessários" value={String(editForm.points_cost || 0)} onChange={v => setEditForm({ ...editForm, points_cost: Number(v) || 0 })} type="number" />
                         <InputField label="Parceiro" value={editForm.partner || ''} onChange={v => setEditForm({ ...editForm, partner: v })} placeholder="Nome do parceiro" />
                         <button onClick={saveEdit} disabled={saving === r.id}

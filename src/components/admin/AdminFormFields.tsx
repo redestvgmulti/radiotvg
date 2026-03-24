@@ -9,6 +9,14 @@ export const InputField = ({ label, value, onChange, placeholder, type = 'text',
   </div>
 );
 
+export const TextAreaField = ({ label, value, onChange, placeholder, className = '', rows = 3 }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; className?: string; rows?: number }) => (
+  <div>
+    <label className="text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-1 block">{label}</label>
+    <textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} rows={rows}
+      className={`w-full py-2 px-3 rounded-lg bg-white border border-slate-200 text-sm text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-colors resize-y ${className}`} />
+  </div>
+);
+
 export const ImageUploadField = ({ imageUrl, onUrlChange, uploadKey, label = 'Imagem', uploading, onUpload, accept = 'image/*' }: { imageUrl: string; onUrlChange: (url: string) => void; uploadKey: string; label?: string; uploading: string | null; onUpload: (file: File, key: string) => Promise<string | null>; accept?: string }) => {
   const fileRef = useRef<HTMLInputElement | null>(null);
   
