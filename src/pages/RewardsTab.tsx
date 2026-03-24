@@ -6,6 +6,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import VoucherModal from '@/components/VoucherModal';
+import RewardTermsModal from '@/components/RewardTermsModal';
+import { startOfWeek } from 'date-fns';
+
+const CURRENT_REWARD_TERMS_VERSION = "v1";
 
 interface Reward {
   id: string;
@@ -29,6 +33,7 @@ const RewardsTab = () => {
   const [redeemedRewardIds, setRedeemedRewardIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [redeeming, setRedeeming] = useState<string | null>(null);
+  const [termsModalOpen, setTermsModalOpen] = useState(false);
   const [voucherModal, setVoucherModal] = useState<{ open: boolean; code: string; protocol: string; rewardName: string; points: number }>({ open: false, code: '', protocol: '', rewardName: '', points: 0 });
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -44,13 +49,21 @@ const RewardsTab = () => {
     setRanking((rankingRes.data as RankEntry[]) || []);
 
     if (user) {
-      const [profileRes, vouchersRes] = await Promise.all([
+      const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+      
+      const [profileRes, vouchersRes, termsRes] = await Promise.all([
         supabase.from('profiles').select('total_points').eq('user_id', user.id).single(),
-        supabase.from('vouchers').select('reward_id').eq('user_id', user.id)
+        supabase.from('vouchers').select('reward_id').eq('user_id', user.id).gte('created_at', weekStart.toISOString()),
+        supabase.from('reward_terms_acceptances').select('terms_version').eq('user_id', user.id).eq('terms_version', CURRENT_REWARD_TERMS_VERSION).maybeSingle()
       ]);
       setUserPoints(profileRes.data?.total_points || 0);
+      
       if (vouchersRes.data) {
         setRedeemedRewardIds(new Set(vouchersRes.data.map(v => v.reward_id)));
+      }
+      
+      if (!termsRes.data) {
+        setTermsModalOpen(true);
       }
     }
     setLoading(false);
@@ -139,8 +152,8 @@ const RewardsTab = () => {
                       <div className="flex items-center justify-between mt-2">
                         <span className="text-xs font-bold text-primary">{r.points_cost} pts</span>
                         {redeemedRewardIds.has(r.id) ? (
-                          <span className="h-7 px-3 rounded-lg bg-green-500/10 text-green-600 text-[10px] font-bold flex items-center justify-center">
-                            Resgatado
+                          <span className="h-7 px-3 rounded-lg bg-green-500/10 text-green-600 text-[10px] font-bold flex items-center justify-center text-center">
+                            Resgatado esta semana
                           </span>
                         ) : (
                           <motion.button whileTap={{ scale: 0.95 }} onClick={() => handleRedeem(r)} disabled={redeeming === r.id}
@@ -186,6 +199,11 @@ const RewardsTab = () => {
         protocolNumber={voucherModal.protocol}
         rewardName={voucherModal.rewardName}
         pointsSpent={voucherModal.points}
+      />
+      <RewardTermsModal 
+        open={termsModalOpen} 
+        onAccept={() => setTermsModalOpen(false)} 
+        termsVersion={CURRENT_REWARD_TERMS_VERSION} 
       />
     </motion.div>
   );
