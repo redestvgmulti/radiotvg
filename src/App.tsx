@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import BottomNav from "./components/BottomNav";
+import PersistentPlayer from "./components/PersistentPlayer";
 import AudioEngine from "./components/AudioEngine";
 import InAppBrowserBanner from "./components/InAppBrowserBanner";
 import AppHeader from "./components/AppHeader";
@@ -80,7 +81,12 @@ const AppLayout = () => {
 
         <Route path="*" element={<NotFound />} />
       </Routes>
-      {!isAdmin && <BottomNav />}
+      {!isAdmin && (
+        <>
+          <PersistentPlayer />
+          <BottomNav />
+        </>
+      )}
     </div>
   );
 };

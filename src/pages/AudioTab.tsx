@@ -165,19 +165,35 @@ const AudioTab = () => {
             </div>
 
             {/* Volume control */}
-            <div className="flex items-center gap-3 mt-4 w-full max-w-[240px]">
-              <button onClick={() => setVolume(volume > 0 ? 0 : 0.8)} className="text-muted-foreground hover:text-foreground transition-colors">
-                {volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            <div className="flex items-center gap-3 mt-6 w-full max-w-[280px] group bg-white/5 backdrop-blur-sm px-4 py-3 rounded-2xl border border-white/10">
+              <button 
+                onClick={() => setVolume(volume > 0 ? 0 : 0.8)} 
+                className="text-muted-foreground hover:text-primary transition-colors duration-300 transform hover:scale-110 active:scale-95"
+                title={volume === 0 ? "Ativar som" : "Desativar som"}
+              >
+                {volume === 0 ? <VolumeX className="h-5 w-5 text-destructive" /> : <Volume2 className="h-5 w-5" />}
               </button>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.01}
-                value={volume}
-                onChange={(e) => setVolume(parseFloat(e.target.value))}
-                className="flex-1 h-1 appearance-none bg-border rounded-full cursor-pointer accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:border-0"
-              />
+              <div className="flex-1 relative flex items-center h-6">
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={volume}
+                  onChange={(e) => setVolume(parseFloat(e.target.value))}
+                  className="w-full h-1.5 appearance-none bg-white/10 rounded-full cursor-pointer accent-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all
+                    [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(255,255,255,0.5)] [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-primary [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-125 [&::-webkit-slider-thumb]:active:scale-110
+                    [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-[0_0_10px_rgba(255,255,255,0.5)] [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-primary [&::-moz-range-thumb]:hover:scale-125 [&::-moz-range-thumb]:active:scale-110"
+                />
+                {/* Visual indicator of volume level */}
+                <div 
+                  className="absolute left-0 top-1/2 -translate-y-1/2 h-1.5 bg-primary rounded-full pointer-events-none transition-all duration-75"
+                  style={{ width: `${volume * 100}%` }}
+                />
+              </div>
+              <span className="text-[10px] font-mono font-bold text-muted-foreground w-8 text-right">
+                {Math.round(volume * 100)}%
+              </span>
             </div>
           </div>
         </div>

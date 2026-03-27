@@ -88,9 +88,10 @@ const PersistentPlayer = () => {
         {/* Volume */}
         <button
           onClick={() => setVolume(volume > 0 ? 0 : 0.8)}
-          className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
+          className="p-2 text-muted-foreground hover:text-primary transition-all duration-300 transform hover:scale-110 active:scale-90"
+          title={volume === 0 ? "Ativar som" : "Desativar som"}
         >
-          {volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+          {volume === 0 ? <VolumeX className="h-4.5 w-4.5 text-destructive" /> : <Volume2 className="h-4.5 w-4.5" />}
         </button>
 
         {/* Play/Pause */}
