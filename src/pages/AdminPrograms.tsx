@@ -17,6 +17,8 @@ interface Program {
   is_active: boolean;
   station_id: string | null;
   sort_order: number;
+  is_group?: boolean; // Virtual flag for UI
+  ids?: string[];    // List of IDs in the group
 }
 
 interface Station {
@@ -122,8 +124,8 @@ const AdminPrograms = () => {
     setForm({ 
       name: p.name, 
       host: p.host, 
-      day_of_week: p.day_of_week, 
-      all_days: false, 
+      day_of_week: p.is_group ? 1 : p.day_of_week, 
+      all_days: p.is_group || false, 
       start_time: start, 
       end_time: end, 
       station_id: p.station_id || '',
@@ -171,22 +173,66 @@ const AdminPrograms = () => {
     fetchData();
   };
 
-  const handleToggle = async (id: string, currentActive: boolean) => {
-    const { error } = await supabase.from('programs').update({ is_active: !currentActive }).eq('id', id);
-    if (error) console.error('[ADMIN ERROR] Toggle failed:', error);
+  const handleToggle = async (id: string, currentActive: boolean, isGroup?: boolean) => {
+    if (isGroup) {
+      const programToToggle = filtered.find(p => p.id === id);
+      if (programToToggle?.ids) {
+        const { error } = await supabase.from('programs')
+          .update({ is_active: !currentActive })
+          .in('id', programToToggle.ids);
+        if (error) console.error('[ADMIN ERROR] Group toggle failed:', error);
+      }
+    } else {
+      const { error } = await supabase.from('programs').update({ is_active: !currentActive }).eq('id', id);
+      if (error) console.error('[ADMIN ERROR] Toggle failed:', error);
+    }
     fetchData();
   };
 
   const getStationLabel = (id: string | null) => stations.find(s => s.id === id)?.label;
   
-  const filtered = selectedDay !== null 
-    ? programs.filter(p => p.day_of_week === selectedDay) 
-    : [...programs].sort((a, b) => {
-        // Na aba "Todos", ordenamos por Horário de Início primeiro (Visão de Grade Mestra)
-        if (a.start_time !== b.start_time) return a.start_time.localeCompare(b.start_time);
-        if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
-        return (a.sort_order || 0) - (b.sort_order || 0);
-      });
+  const filtered = (() => {
+    if (selectedDay !== null) {
+      return programs.filter(p => p.day_of_week === selectedDay);
+    }
+
+    // Na aba "Todos", vamos agrupar programas que acontecem a semana inteira
+    const groups: Record<string, Program[]> = {};
+    programs.forEach(p => {
+      const key = `${p.name}-${p.station_id}-${p.start_time}-${p.end_time}`;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(p);
+    });
+
+    const result: Program[] = [];
+    const processedGroups = new Set<string>();
+
+    programs.forEach(p => {
+      const key = `${p.name}-${p.station_id}-${p.start_time}-${p.end_time}`;
+      if (processedGroups.has(key)) return;
+
+      const group = groups[key];
+      if (group.length === 7) {
+        // Encontramos um programa que passa todos os dias!
+        result.push({
+          ...group[0],
+          is_group: true,
+          ids: group.map(g => g.id),
+          day_of_week: -1 // Flag para "Todos os dias"
+        });
+        processedGroups.add(key);
+      } else {
+        // Programa individual ou parcial (ex: Seg a Sex) - listamos normalmente
+        result.push(p);
+      }
+    });
+
+    return result.sort((a, b) => {
+      if (a.start_time !== b.start_time) return a.start_time.localeCompare(b.start_time);
+      if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
+      return (a.sort_order || 0) - (b.sort_order || 0);
+    });
+  })();
 
   const getShiftColor = (time: string) => {
     const hour = parseInt(time?.split(':')[0] || '0', 10);
@@ -292,7 +338,13 @@ const AdminPrograms = () => {
                 <p className="text-sm font-semibold text-slate-800 truncate">{p.name}</p>
                 {p.host && p.host.trim() !== "" && <p className="text-[11px] text-slate-500 truncate">Apre: {p.host}</p>}
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-[10px] text-slate-400">{DAYS[p.day_of_week]}</span>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    {p.day_of_week === -1 ? (
+                      <span className="text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded">Todos os dias</span>
+                    ) : (
+                      DAYS[p.day_of_week]
+                    )}
+                  </span>
                   {p.station_id && (
                     <span className="text-[9px] bg-slate-100 px-1.5 py-0.5 rounded-full text-slate-500 font-medium">
                       {getStationLabel(p.station_id) || 'Estação'}
@@ -301,7 +353,7 @@ const AdminPrograms = () => {
                 </div>
               </div>
               {/* Toggle */}
-              <button onClick={() => handleToggle(p.id, p.is_active)}
+              <button onClick={() => handleToggle(p.id, p.is_active, p.is_group)}
                 className={`w-10 h-5 rounded-full relative transition-colors ${p.is_active ? 'bg-green-500' : 'bg-slate-300'}`}>
                 <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${p.is_active ? 'left-[22px]' : 'left-0.5'}`} />
               </button>
