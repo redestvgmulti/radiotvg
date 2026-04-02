@@ -42,6 +42,15 @@ const AudioTab = () => {
   const [whatsappNumber, setWhatsappNumber] = useState<string | null>(null);
   const [whatsappMessage, setWhatsappMessage] = useState<string>('');
   const [instaPosts, setInstaPosts] = useState<{ id: string; post_url: string; thumbnail_url: string | null }[]>([]);
+  const [currentTime, setCurrentTime] = useState(`${String(new Date().getHours()).padStart(2, '0')}:${String(new Date().getMinutes()).padStart(2, '0')}`);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      setCurrentTime(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
+    }, 30000); // Atualiza a cada 30 seg
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -64,37 +73,32 @@ const AudioTab = () => {
     load();
   }, []);
 
-  const now = new Date();
-  const currentDay = now.getDay();
-  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const currentDay = new Date().getDay();
 
   const nowPlaying = useMemo(() => {
     return programs.find(p => {
-      // Basic time and day match
       const isCorrectTime = p.day_of_week === currentDay && 
                            p.start_time.slice(0, 5) <= currentTime && 
                            p.end_time.slice(0, 5) > currentTime;
       if (!isCorrectTime) return false;
-
-      // Station affinity match: if program identifies a station, it MUST match the current one.
-      // If it doesn't identify a station, it's considered global.
       if (p.station_id) return env && p.station_id === env.id;
       return true; 
     });
   }, [programs, currentDay, currentTime, env?.id]);
 
   const upcoming = useMemo(() => {
-    const sorted = [...programs]
-      .filter(p => !p.station_id || (env && p.station_id === env.id))
+    return programs
+      .filter(p => 
+        p.day_of_week === currentDay && 
+        p.start_time.slice(0, 5) > currentTime &&
+        (!p.station_id || (env && p.station_id === env.id))
+      )
       .sort((a, b) => {
-        if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
         if (a.start_time !== b.start_time) return a.start_time.localeCompare(b.start_time);
         return (a.sort_order || 0) - (b.sort_order || 0);
-      });
-    const idx = sorted.findIndex(p => p.id === nowPlaying?.id);
-    const after = idx >= 0 ? sorted.slice(idx + 1) : sorted;
-    return after.slice(0, 4);
-  }, [programs, nowPlaying?.id, env?.id]);
+      })
+      .slice(0, 4);
+  }, [programs, currentTime, currentDay, env?.id]);
 
   return (
     <motion.div
@@ -289,7 +293,9 @@ const AudioTab = () => {
                 <div className="w-px h-8 bg-border/50" />
                 <div className="flex-1 min-w-0">
                   <p className="text-foreground text-sm font-semibold truncate">{prog.name}</p>
-                  <p className="text-muted-foreground text-[11px]">com {prog.host}</p>
+                  {prog.host && prog.host.trim() !== "" && (
+                    <p className="text-muted-foreground text-[11px]">com {prog.host}</p>
+                  )}
                 </div>
               </motion.div>
             ))}

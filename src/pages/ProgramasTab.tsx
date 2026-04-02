@@ -40,9 +40,18 @@ const ProgramasTab = () => {
     fetchPrograms();
   }, []);
 
+  const [currentTimeStr, setCurrentTimeStr] = useState(`${String(new Date().getHours()).padStart(2, '0')}:${String(new Date().getMinutes()).padStart(2, '0')}`);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      setCurrentTimeStr(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
+    }, 30000); 
+    return () => clearInterval(timer);
+  }, []);
+
   const now = new Date();
   const currentDay = now.getDay();
-  const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
   const filtered = programs.filter(p => !filterStation || p.station_id === filterStation);
   const nowPlaying = filtered.find(
