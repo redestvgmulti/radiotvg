@@ -234,6 +234,55 @@ const AdminPrograms = () => {
     });
   })();
 
+  const sertanejoStation = stations.find(s => s.label.toLowerCase().includes('sertanejo'));
+  const popStation = stations.find(s => s.label.toLowerCase().includes('pop'));
+
+  const sertanejoPrograms = filtered.filter(p => !p.station_id || p.station_id === sertanejoStation?.id);
+  const popPrograms = filtered.filter(p => !p.station_id || p.station_id === popStation?.id);
+
+  const renderProgramCard = (p: Program, i: number) => (
+    <motion.div key={p.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
+      className={`flex items-center gap-3 p-3 pl-0 pr-4 rounded-xl bg-white border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden relative ${!p.is_active ? 'opacity-50 grayscale-[20%]' : ''}`}>
+      <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${getShiftColor(p.start_time)}`} />
+      <div className="flex flex-col items-center justify-center w-11 shrink-0 bg-slate-50/80 rounded-lg py-1.5 ml-3">
+        <Clock className="h-3.5 w-3.5 text-slate-400 mb-0.5" />
+        <span className="text-[10px] font-medium text-slate-600 leading-tight">{p.start_time.slice(0, 5)}</span>
+        <span className="text-[9px] text-slate-400 leading-tight">{p.end_time.slice(0, 5)}</span>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] font-bold text-slate-800 truncate leading-snug">{p.name}</p>
+        {p.host && p.host.trim() !== "" && <p className="text-[10px] text-slate-500 truncate mt-0.5">Apre: {p.host}</p>}
+        <div className="flex items-center gap-1.5 mt-1">
+          <span className="text-[9px] text-slate-400 font-medium">
+            {p.day_of_week === -1 ? (
+              <span className="text-violet-600 bg-violet-50 px-1 py-0.5 rounded">Todos os dias</span>
+            ) : (
+              DAYS[p.day_of_week]
+            )}
+          </span>
+          {p.station_id && (
+            <span className="text-[8px] bg-slate-100 px-1.5 py-0.5 rounded-full text-slate-500 font-medium">
+              {getStationLabel(p.station_id) || 'Estação'}
+            </span>
+          )}
+        </div>
+      </div>
+      {/* Toggle */}
+      <button onClick={() => handleToggle(p.id, p.is_active, p.is_group)}
+        className={`w-9 h-4.5 rounded-full relative transition-colors ${p.is_active ? 'bg-green-500' : 'bg-slate-300'}`}>
+        <span className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform ${p.is_active ? 'left-[20px]' : 'left-0.5'}`} />
+      </button>
+      <div className="flex gap-1 pr-1">
+        <button onClick={() => handleEdit(p)} className="h-7 w-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors">
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
+        <button onClick={() => handleDelete(p.id)} className="h-7 w-7 rounded-lg bg-slate-100 text-red-300 hover:bg-red-50 hover:text-red-500 transition-colors flex items-center justify-center">
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </motion.div>
+  );
+
   const getShiftColor = (time: string) => {
     const hour = parseInt(time?.split(':')[0] || '0', 10);
     if (hour >= 5 && hour < 12) return 'bg-amber-400'; // Manhã
@@ -316,7 +365,7 @@ const AdminPrograms = () => {
         ))}
       </div>
 
-      <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 py-6 space-y-3">
+      <div className="max-w-[1400px] mx-auto px-4 py-6">
         {loading ? (
           <p className="text-sm text-slate-400 text-center py-10">Carregando...</p>
         ) : filtered.length === 0 ? (
@@ -324,47 +373,44 @@ const AdminPrograms = () => {
             <Calendar className="h-8 w-8 text-slate-200 mx-auto mb-2" />
             <p className="text-xs text-slate-400">Nenhum programa encontrado.</p>
           </div>
+        ) : selectedDay === null ? (
+          /* Visualização de Duas Colunas */
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-10">
+            {/* Coluna Sertanejo */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-amber-100">
+                <div className="w-1.5 h-4 bg-amber-400 rounded-full" />
+                <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Grade Sertaneja</h2>
+              </div>
+              <div className="space-y-2.5">
+                {sertanejoPrograms.length === 0 ? (
+                  <p className="text-[10px] text-slate-400 italic">Vazio</p>
+                ) : (
+                  sertanejoPrograms.map((p, i) => renderProgramCard(p, i))
+                )}
+              </div>
+            </div>
+
+            {/* Coluna Pop */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-blue-100">
+                <div className="w-1.5 h-4 bg-blue-500 rounded-full" />
+                <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Grade Pop Rock</h2>
+              </div>
+              <div className="space-y-2.5">
+                {popPrograms.length === 0 ? (
+                  <p className="text-[10px] text-slate-400 italic">Vazio</p>
+                ) : (
+                  popPrograms.map((p, i) => renderProgramCard(p, i))
+                )}
+              </div>
+            </div>
+          </div>
         ) : (
-          filtered.map((p, i) => (
-            <motion.div key={p.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
-              className={`flex items-center gap-3 p-3.5 pl-0 pr-4 rounded-xl bg-white border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden relative ${!p.is_active ? 'opacity-50 grayscale-[20%]' : ''}`}>
-              <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${getShiftColor(p.start_time)}`} />
-              <div className="flex flex-col items-center justify-center w-12 shrink-0 bg-slate-50/80 rounded-lg py-1.5 ml-3.5">
-                <Clock className="h-3.5 w-3.5 text-slate-400 mb-0.5" />
-                <span className="text-[10px] font-medium text-slate-600 leading-tight">{p.start_time.slice(0, 5)}</span>
-                <span className="text-[10px] text-slate-400 leading-tight">{p.end_time.slice(0, 5)}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-800 truncate">{p.name}</p>
-                {p.host && p.host.trim() !== "" && <p className="text-[11px] text-slate-500 truncate">Apre: {p.host}</p>}
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-[10px] text-slate-400 font-medium">
-                    {p.day_of_week === -1 ? (
-                      <span className="text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded">Todos os dias</span>
-                    ) : (
-                      DAYS[p.day_of_week]
-                    )}
-                  </span>
-                  {p.station_id && (
-                    <span className="text-[9px] bg-slate-100 px-1.5 py-0.5 rounded-full text-slate-500 font-medium">
-                      {getStationLabel(p.station_id) || 'Estação'}
-                    </span>
-                  )}
-                </div>
-              </div>
-              {/* Toggle */}
-              <button onClick={() => handleToggle(p.id, p.is_active, p.is_group)}
-                className={`w-10 h-5 rounded-full relative transition-colors ${p.is_active ? 'bg-green-500' : 'bg-slate-300'}`}>
-                <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${p.is_active ? 'left-[22px]' : 'left-0.5'}`} />
-              </button>
-              <button onClick={() => handleEdit(p)} className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors">
-                <Pencil className="h-4 w-4" />
-              </button>
-              <button onClick={() => handleDelete(p.id)} className="h-8 w-8 rounded-lg bg-slate-100 text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors flex items-center justify-center">
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </motion.div>
-          ))
+          /* Visualização Unificada por Dia */
+          <div className="max-w-2xl mx-auto space-y-3">
+            {filtered.map((p, i) => renderProgramCard(p, i))}
+          </div>
         )}
       </div>
     </>
