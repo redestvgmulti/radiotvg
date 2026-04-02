@@ -146,12 +146,19 @@ const AdminPrograms = () => {
       const confirmAll = window.confirm(`Deseja excluir "${programToDelete.name}" de TODOS os dias da semana?\nIsso removerá todas as ocorrências deste programa neste horário.`);
       
       if (confirmAll) {
-        const { error } = await supabase.from('programs')
+        let query = supabase.from('programs')
           .delete()
           .eq('name', programToDelete.name)
           .eq('start_time', programToDelete.start_time)
-          .eq('end_time', programToDelete.end_time)
-          .eq('station_id', programToDelete.station_id);
+          .eq('end_time', programToDelete.end_time);
+
+        if (programToDelete.station_id) {
+          query = query.eq('station_id', programToDelete.station_id);
+        } else {
+          query = query.is('station_id', null);
+        }
+
+        const { error } = await query;
           
         if (error) {
           console.error('[ADMIN ERROR] Mass delete failed:', error);
