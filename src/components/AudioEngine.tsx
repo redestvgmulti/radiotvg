@@ -522,33 +522,9 @@ const AudioEngine = () => {
       if (!isPlayingRef.current) {
         clearStallRecovery();
       } else {
-        logAudioState('System Pause Detected', 'Attempting Auto-Resume for interruptions like Push/Calls');
-        let attempts = 0;
-        const autoResume = () => {
-          if (!isPlayingRef.current) return;
-          if (!audioRef.current?.paused) return;
-          
-          const playPromise = audioRef.current.play();
-          if (playPromise) {
-            playPromise.then(() => {
-              logAudioState('Auto-resume success');
-            }).catch((error) => {
-              if (error.name === 'NotAllowedError') {
-                logAudioState('Auto-resume blocked', 'Awaiting user interaction. Stopping loop.');
-                useRadioStore.getState().setPlaying(false);
-                return;
-              }
-              attempts++;
-              if (attempts < 20) {
-                setTimeout(autoResume, 1500);
-              } else {
-                logAudioState('Auto-resume gave up after 30s');
-                useRadioStore.getState().setPlaying(false);
-              }
-            });
-          }
-        };
-        setTimeout(autoResume, 1000);
+        logAudioState('System/OS Pause Detected', 'Staying paused to respect external media/calls');
+        // We no longer auto-resume in a loop here to avoid overlapping with phone calls/instagram.
+        // The resume focus logic below handles re-starting when the user returns to the app.
       }
     };
     const onStalled = () => { 

@@ -53,7 +53,7 @@ const ProgramasTab = () => {
   const now = new Date();
   const currentDay = now.getDay();
 
-  const filtered = programs.filter(p => !filterStation || p.station_id === filterStation);
+  const filtered = programs.filter(p => !filterStation || !p.station_id || p.station_id === filterStation);
   const nowPlaying = filtered.find(
     p => p.day_of_week === currentDay && p.start_time.slice(0, 5) <= currentTimeStr && p.end_time.slice(0, 5) > currentTimeStr
   );
@@ -65,8 +65,9 @@ const ProgramasTab = () => {
     return acc;
   }, {});
 
-  // Sort days starting from today
-  const sortedDays = Array.from({ length: 7 }, (_, i) => (currentDay + i) % 7).filter(d => byDay[d]?.length);
+  // Sort days starting from today. ALWAYS include today in the view even if empty to keep layout consistent.
+  const sortedDays = Array.from({ length: 7 }, (_, i) => (currentDay + i) % 7)
+    .filter(d => d === currentDay || byDay[d]?.length);
 
   const getStationLabel = (id: string | null) => {
     if (!id) return null;

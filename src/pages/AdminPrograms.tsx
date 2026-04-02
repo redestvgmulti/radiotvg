@@ -136,6 +136,32 @@ const AdminPrograms = () => {
   };
 
   const handleDelete = async (id: string) => {
+    const programToDelete = programs.find(p => p.id === id);
+    if (!programToDelete) return;
+
+    // Se estiver na aba "Todos" (selectedDay === null), oferecer exclusão em massa
+    if (selectedDay === null) {
+      const confirmAll = window.confirm(`Deseja excluir "${programToDelete.name}" de TODOS os dias da semana?\nIsso removerá todas as ocorrências deste programa neste horário.`);
+      
+      if (confirmAll) {
+        const { error } = await supabase.from('programs')
+          .delete()
+          .eq('name', programToDelete.name)
+          .eq('start_time', programToDelete.start_time)
+          .eq('end_time', programToDelete.end_time)
+          .eq('station_id', programToDelete.station_id);
+          
+        if (error) {
+          console.error('[ADMIN ERROR] Mass delete failed:', error);
+          return toast({ title: 'Erro ao remover em massa', description: error.message, variant: 'destructive' });
+        }
+        toast({ title: 'Programa removido de todos os dias' });
+        fetchData();
+        return;
+      }
+    }
+
+    // Caso contrário (ou se negado em massa), deletar apenas este ID
     const { error } = await supabase.from('programs').delete().eq('id', id);
     if (error) {
       console.error('[ADMIN ERROR] Delete failed:', error);
@@ -152,7 +178,15 @@ const AdminPrograms = () => {
   };
 
   const getStationLabel = (id: string | null) => stations.find(s => s.id === id)?.label;
-  const filtered = selectedDay !== null ? programs.filter(p => p.day_of_week === selectedDay) : programs;
+  
+  const filtered = selectedDay !== null 
+    ? programs.filter(p => p.day_of_week === selectedDay) 
+    : [...programs].sort((a, b) => {
+        // Na aba "Todos", ordenamos por Horário de Início primeiro (Visão de Grade Mestra)
+        if (a.start_time !== b.start_time) return a.start_time.localeCompare(b.start_time);
+        if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
+        return (a.sort_order || 0) - (b.sort_order || 0);
+      });
 
   const getShiftColor = (time: string) => {
     const hour = parseInt(time?.split(':')[0] || '0', 10);
