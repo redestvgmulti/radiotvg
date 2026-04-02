@@ -287,7 +287,7 @@ const AdminPrograms = () => {
       {/* Toggle */}
       <button onClick={() => handleToggle(p.id, p.is_active, p.is_group)}
         className={`w-10 h-5 rounded-full relative transition-colors shrink-0 ${p.is_active ? 'bg-green-500' : 'bg-slate-300'}`}>
-        <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${p.is_active ? 'translate-x-[20px]' : 'translate-x-0.5'}`} />
+        <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${p.is_active ? 'translate-x-5' : 'translate-x-0'}`} />
       </button>
       <div className="flex gap-1 pr-1">
         <button onClick={() => handleEdit(p)} className="h-7 w-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors">
