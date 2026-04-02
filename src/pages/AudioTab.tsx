@@ -22,6 +22,7 @@ const DAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sáb
 interface Program {
   id: string; name: string; host: string; day_of_week: number;
   start_time: string; end_time: string; is_active: boolean; station_id: string | null;
+  sort_order: number;
 }
 
 const AudioTab = () => {
@@ -45,12 +46,17 @@ const AudioTab = () => {
   useEffect(() => {
     const load = async () => {
       const [progsRes, wpRes, wpMsgRes, instaRes] = await Promise.all([
-        supabase.from('programs').select('*').eq('is_active', true).order('day_of_week').order('start_time'),
+        supabase.from('programs')
+          .select('*')
+          .eq('is_active', true)
+          .order('day_of_week')
+          .order('start_time')
+          .order('sort_order', { ascending: true }),
         supabase.from('radio_settings').select('value').eq('key', 'whatsapp_number').maybeSingle(),
         supabase.from('radio_settings').select('value').eq('key', 'whatsapp_message').maybeSingle(),
         supabase.from('instagram_posts').select('id, post_url, thumbnail_url').eq('is_active', true).order('sort_order').limit(6),
       ]);
-      setPrograms((progsRes.data as Program[]) || []);
+      setPrograms((progsRes.data as unknown as Program[]) || []);
       if (wpRes.data?.value) setWhatsappNumber(wpRes.data.value);
       if (wpMsgRes.data?.value) setWhatsappMessage(wpMsgRes.data.value);
       setInstaPosts((instaRes.data as any[]) || []);
@@ -82,7 +88,8 @@ const AudioTab = () => {
       .filter(p => !p.station_id || (env && p.station_id === env.id))
       .sort((a, b) => {
         if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
-        return a.start_time.localeCompare(b.start_time);
+        if (a.start_time !== b.start_time) return a.start_time.localeCompare(b.start_time);
+        return (a.sort_order || 0) - (b.sort_order || 0);
       });
     const idx = sorted.findIndex(p => p.id === nowPlaying?.id);
     const after = idx >= 0 ? sorted.slice(idx + 1) : sorted;
@@ -126,9 +133,9 @@ const AudioTab = () => {
               {nowPlaying?.name || env?.label || 'Rádio TVG'}
             </motion.h1>
 
-            {nowPlaying && (
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-muted-foreground text-sm mb-1">
-                com <span className="text-foreground/80 font-medium">{nowPlaying.host}</span>
+            {nowPlaying && nowPlaying.host && nowPlaying.host.trim() !== "" && (
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-muted-foreground text-sm mb-1 uppercase tracking-wider font-semibold">
+                com <span className="text-secondary font-bold">{nowPlaying.host}</span>
               </motion.p>
             )}
 
@@ -226,7 +233,9 @@ const AudioTab = () => {
                 <p className="text-foreground font-display font-bold text-base truncate">{nowPlaying.name}</p>
                 <span className="flex-shrink-0 w-2 h-2 rounded-full bg-live animate-pulse" />
               </div>
-              <p className="text-muted-foreground text-xs mt-0.5">com {nowPlaying.host}</p>
+              {nowPlaying.host && nowPlaying.host.trim() !== "" && (
+                <p className="text-muted-foreground text-xs mt-0.5">com {nowPlaying.host}</p>
+              )}
               <p className="text-muted-foreground/60 text-[10px] mt-0.5">
                 {nowPlaying.start_time.slice(0, 5)} – {nowPlaying.end_time.slice(0, 5)}
               </p>

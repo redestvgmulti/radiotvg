@@ -9,6 +9,7 @@ const DAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sáb
 interface Program {
   id: string; name: string; host: string; day_of_week: number;
   start_time: string; end_time: string; is_active: boolean; station_id: string | null;
+  sort_order: number;
 }
 
 const ProgramasTab = () => {
@@ -27,8 +28,13 @@ const ProgramasTab = () => {
 
   useEffect(() => {
     const fetchPrograms = async () => {
-      const { data } = await supabase.from('programs').select('*').eq('is_active', true).order('day_of_week').order('start_time');
-      setPrograms((data as Program[]) || []);
+      const { data } = await supabase.from('programs')
+        .select('*')
+        .eq('is_active', true)
+        .order('day_of_week')
+        .order('start_time')
+        .order('sort_order', { ascending: true });
+      setPrograms((data as unknown as Program[]) || []);
       setLoading(false);
     };
     fetchPrograms();
@@ -90,8 +96,10 @@ const ProgramasTab = () => {
               <span className="text-[9px] font-bold text-primary-foreground uppercase tracking-wider">Ao Vivo</span>
             </div>
             <div className="relative p-4 pt-12">
-              <p className="text-foreground text-lg font-display font-bold">{nowPlaying.name}</p>
-              <p className="text-muted-foreground text-sm mt-0.5">com {nowPlaying.host}</p>
+              <p className="text-foreground text-lg font-display font-bold leading-none">{nowPlaying.name}</p>
+              {nowPlaying.host && nowPlaying.host.trim() !== "" && (
+                <p className="text-muted-foreground text-sm mt-0.5">com {nowPlaying.host}</p>
+              )}
               <div className="flex items-center gap-2 mt-1">
                 <Clock className="h-3 w-3 text-muted-foreground" />
                 <p className="text-muted-foreground text-xs">{nowPlaying.start_time.slice(0, 5)} – {nowPlaying.end_time.slice(0, 5)}</p>
@@ -136,7 +144,9 @@ const ProgramasTab = () => {
                           <p className="text-sm font-semibold text-foreground truncate">{prog.name}</p>
                           {isNow && <span className="w-2 h-2 rounded-full bg-live animate-pulse flex-shrink-0" />}
                         </div>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">com {prog.host}</p>
+                        {prog.host && prog.host.trim() !== "" && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5">com {prog.host}</p>
+                        )}
                       </div>
                       {getStationLabel(prog.station_id) && (
                         <span className="text-[8px] bg-muted px-2 py-0.5 rounded-full text-muted-foreground font-medium flex-shrink-0">

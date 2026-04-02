@@ -16,6 +16,7 @@ interface Program {
   end_time: string;
   is_active: boolean;
   station_id: string | null;
+  sort_order: number;
 }
 
 interface Station {
@@ -23,7 +24,16 @@ interface Station {
   label: string;
 }
 
-const emptyForm = { name: '', host: '', day_of_week: 1, all_days: false, start_time: '08:00', end_time: '09:00', station_id: '' };
+const emptyForm = { 
+  name: '', 
+  host: '', 
+  day_of_week: 1, 
+  all_days: false, 
+  start_time: '08:00', 
+  end_time: '09:00', 
+  station_id: '',
+  sort_order: 0 
+};
 
 const inputClass = "w-full h-9 px-3 rounded-lg bg-white border border-slate-200 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-colors";
 const selectClass = "w-full h-9 px-3 rounded-lg bg-white border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-colors appearance-none";
@@ -41,61 +51,111 @@ const AdminPrograms = () => {
 
   const fetchData = async () => {
     const [programsRes, stationsRes] = await Promise.all([
-      supabase.from('programs').select('*').order('day_of_week').order('start_time'),
+      supabase.from('programs')
+        .select('*')
+        .order('day_of_week')
+        .order('start_time')
+        .order('sort_order', { ascending: true }),
       supabase.from('stream_environments').select('id, label').order('sort_order'),
     ]);
-    setPrograms((programsRes.data as Program[]) || []);
+    setPrograms((programsRes.data as unknown as Program[]) || []);
     setStations((stationsRes.data as Station[]) || []);
     setLoading(false);
   };
+
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => { fetchData(); }, []);
 
   const handleSave = async () => {
     if (!form.name.trim()) return toast({ title: 'Nome obrigatório', variant: 'destructive' });
+    
+    setIsSaving(true);
     const basePayload = {
-      name: form.name, host: form.host,
-      start_time: form.start_time, end_time: form.end_time, station_id: form.station_id || null,
+      name: form.name, 
+      host: form.host,
+      start_time: form.start_time, 
+      end_time: form.end_time, 
+      station_id: form.station_id || null,
+      sort_order: form.sort_order || 0,
     };
 
-    if (editingId) {
-      const payload = { ...basePayload, day_of_week: form.day_of_week };
-      const { error } = await supabase.from('programs').update(payload).eq('id', editingId);
-      if (error) return toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
-      toast({ title: 'Programa atualizado' });
-    } else if (form.all_days) {
-      const rows = Array.from({ length: 7 }, (_, i) => ({ ...basePayload, day_of_week: i }));
-      const { error } = await supabase.from('programs').insert(rows);
-      if (error) return toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
-      toast({ title: 'Programa criado para todos os dias' });
-    } else {
-      const payload = { ...basePayload, day_of_week: form.day_of_week };
-      const { error } = await supabase.from('programs').insert(payload);
-      if (error) return toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
-      toast({ title: 'Programa criado' });
+    try {
+      if (editingId) {
+        const payload = { ...basePayload, day_of_week: form.day_of_week };
+        const { error } = await supabase.from('programs').update(payload).eq('id', editingId);
+        if (error) throw error;
+        toast({ title: 'Programa atualizado' });
+      } else if (form.all_days) {
+        const rows = Array.from({ length: 7 }, (_, i) => ({ ...basePayload, day_of_week: i }));
+        const { error } = await supabase.from('programs').insert(rows);
+        if (error) throw error;
+        toast({ title: 'Programa criado para todos os dias' });
+      } else {
+        const payload = { ...basePayload, day_of_week: form.day_of_week };
+        const { error } = await supabase.from('programs').insert(payload);
+        if (error) throw error;
+        toast({ title: 'Programa criado' });
+      }
+      
+      setShowForm(false); 
+      setEditingId(null); 
+      setForm(emptyForm); 
+      await fetchData();
+    } catch (error: any) {
+      console.error('[ADMIN ERROR] Failed to save program:', error);
+      toast({ 
+        title: 'Erro ao salvar', 
+        description: error.message || 'Verifique sua conexão ou permissões.', 
+        variant: 'destructive' 
+      });
+    } finally {
+      setIsSaving(false);
     }
-    setShowForm(false); setEditingId(null); setForm(emptyForm); fetchData();
   };
 
   const handleEdit = (p: Program) => {
-    setForm({ name: p.name, host: p.host, day_of_week: p.day_of_week, all_days: false, start_time: p.start_time.slice(0, 5), end_time: p.end_time.slice(0, 5), station_id: p.station_id || '' });
-    setEditingId(p.id); setShowForm(true);
+    // Ensure times are clean for input type="time"
+    const start = p.start_time ? p.start_time.slice(0, 5) : '08:00';
+    const end = p.end_time ? p.end_time.slice(0, 5) : '09:00';
+    
+    setForm({ 
+      name: p.name, 
+      host: p.host, 
+      day_of_week: p.day_of_week, 
+      all_days: false, 
+      start_time: start, 
+      end_time: end, 
+      station_id: p.station_id || '',
+      sort_order: p.sort_order || 0
+    });
+    setEditingId(p.id); 
+    setShowForm(true);
+    // Scroll to top where the form is
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (id: string) => {
-    await supabase.from('programs').delete().eq('id', id);
-    toast({ title: 'Programa removido' }); fetchData();
+    const { error } = await supabase.from('programs').delete().eq('id', id);
+    if (error) {
+      console.error('[ADMIN ERROR] Delete failed:', error);
+      return toast({ title: 'Erro ao remover', description: error.message, variant: 'destructive' });
+    }
+    toast({ title: 'Programa removido' }); 
+    fetchData();
   };
 
   const handleToggle = async (id: string, currentActive: boolean) => {
-    await supabase.from('programs').update({ is_active: !currentActive }).eq('id', id); fetchData();
+    const { error } = await supabase.from('programs').update({ is_active: !currentActive }).eq('id', id);
+    if (error) console.error('[ADMIN ERROR] Toggle failed:', error);
+    fetchData();
   };
 
   const getStationLabel = (id: string | null) => stations.find(s => s.id === id)?.label;
   const filtered = selectedDay !== null ? programs.filter(p => p.day_of_week === selectedDay) : programs;
 
   const getShiftColor = (time: string) => {
-    const hour = parseInt(time.split(':')[0] || '0', 10);
+    const hour = parseInt(time?.split(':')[0] || '0', 10);
     if (hour >= 5 && hour < 12) return 'bg-amber-400'; // Manhã
     if (hour >= 12 && hour < 18) return 'bg-orange-500'; // Tarde
     if (hour >= 18 && hour < 24) return 'bg-indigo-600'; // Noite
@@ -105,7 +165,7 @@ const AdminPrograms = () => {
   return (
     <>
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-3.5 bg-white border-b border-slate-200 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+      <div className="flex items-center gap-3 px-5 py-3.5 bg-white border-b border-slate-200 shadow-[0_1px_2px_rgba(0,0,0,0.03)] sticky top-0 z-20">
         <button onClick={() => navigate('/admin/dashboard')} className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors">
           <ArrowLeft className="h-4 w-4" />
         </button>
@@ -118,14 +178,14 @@ const AdminPrograms = () => {
             <p className="text-[10px] text-slate-400">Grade de programas</p>
           </div>
         </div>
-        <button onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(!showForm); }}
+        <button onClick={() => { if (showForm) { setShowForm(false); setEditingId(null); } else { setForm(emptyForm); setEditingId(null); setShowForm(true); } }}
           className="h-8 px-3 rounded-lg bg-violet-500 text-white text-xs font-semibold flex items-center gap-1.5 hover:bg-violet-600 transition-colors shadow-sm">
           {showForm ? <X className="h-3.5 w-3.5" /> : <><Plus className="h-3.5 w-3.5" /> Novo</>}
         </button>
       </div>
 
       {showForm && (
-        <div className="border-b border-slate-200 bg-slate-50 px-5 py-4 space-y-3">
+        <div className="border-b border-slate-200 bg-slate-50 px-5 py-4 space-y-3 sticky top-14 z-10 shadow-md">
           <p className="text-xs font-semibold text-slate-600">{editingId ? 'Editar' : 'Novo'} Programa</p>
           <input placeholder="Nome do programa" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className={inputClass} />
           <input placeholder="Apresentador" value={form.host} onChange={e => setForm(f => ({ ...f, host: e.target.value }))} className={inputClass} />
@@ -154,9 +214,15 @@ const AdminPrograms = () => {
               <label className="text-[10px] text-slate-500 mb-1 block">Fim</label>
               <input type="time" value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} className={inputClass} />
             </div>
+            <div className="w-20">
+              <label className="text-[10px] text-slate-500 mb-1 block">Ordem</label>
+              <input type="number" placeholder="0" value={form.sort_order} onChange={e => setForm(f => ({ ...f, sort_order: Number(e.target.value) }))} className={inputClass} />
+            </div>
           </div>
           <div className="flex gap-2 pt-1">
-            <button onClick={handleSave} className="flex-1 h-9 rounded-lg bg-violet-500 text-white font-semibold text-xs hover:bg-violet-600 transition-colors shadow-sm">Salvar</button>
+            <button disabled={isSaving} onClick={handleSave} className="flex-1 h-9 rounded-lg bg-violet-500 text-white font-semibold text-xs hover:bg-violet-600 transition-colors shadow-sm disabled:opacity-50">
+              {isSaving ? 'Salvando...' : 'Salvar'}
+            </button>
             <button onClick={() => { setShowForm(false); setEditingId(null); }} className="h-9 px-4 rounded-lg border border-slate-200 text-xs text-slate-500 hover:bg-slate-100 transition-colors">Cancelar</button>
           </div>
         </div>
@@ -190,7 +256,7 @@ const AdminPrograms = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-slate-800 truncate">{p.name}</p>
-                {p.host && <p className="text-[11px] text-slate-500 truncate">{p.host}</p>}
+                {p.host && p.host.trim() !== "" && <p className="text-[11px] text-slate-500 truncate">Apre: {p.host}</p>}
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="text-[10px] text-slate-400">{DAYS[p.day_of_week]}</span>
                   {p.station_id && (
