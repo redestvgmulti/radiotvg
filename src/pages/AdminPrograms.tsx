@@ -181,19 +181,29 @@ const AdminPrograms = () => {
   };
 
   const handleToggle = async (id: string, currentActive: boolean, isGroup?: boolean) => {
-    if (isGroup) {
-      const programToToggle = filtered.find(p => p.id === id);
-      if (programToToggle?.ids) {
+    try {
+      if (isGroup) {
+        // Encontrar o grupo no array 'filtered' para pegar todos os IDs
+        const groupObj = filtered.find(p => p.id === id && p.is_group);
+        if (groupObj?.ids) {
+          const { error } = await supabase.from('programs')
+            .update({ is_active: !currentActive })
+            .in('id', groupObj.ids);
+          if (error) throw error;
+          toast({ title: `Programa ${!currentActive ? 'ativado' : 'desativado'} em todos os dias` });
+        }
+      } else {
         const { error } = await supabase.from('programs')
           .update({ is_active: !currentActive })
-          .in('id', programToToggle.ids);
-        if (error) console.error('[ADMIN ERROR] Group toggle failed:', error);
+          .eq('id', id);
+        if (error) throw error;
+        toast({ title: `Programa ${!currentActive ? 'ativado' : 'desativado'}` });
       }
-    } else {
-      const { error } = await supabase.from('programs').update({ is_active: !currentActive }).eq('id', id);
-      if (error) console.error('[ADMIN ERROR] Toggle failed:', error);
+      fetchData();
+    } catch (error: any) {
+      console.error('[ADMIN ERROR] Toggle failed:', error);
+      toast({ title: 'Erro ao alterar status', description: error.message, variant: 'destructive' });
     }
-    fetchData();
   };
 
   const getStationLabel = (id: string | null) => stations.find(s => s.id === id)?.label;
@@ -276,8 +286,8 @@ const AdminPrograms = () => {
       </div>
       {/* Toggle */}
       <button onClick={() => handleToggle(p.id, p.is_active, p.is_group)}
-        className={`w-9 h-4.5 rounded-full relative transition-colors ${p.is_active ? 'bg-green-500' : 'bg-slate-300'}`}>
-        <span className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform ${p.is_active ? 'left-[20px]' : 'left-0.5'}`} />
+        className={`w-10 h-5 rounded-full relative transition-colors shrink-0 ${p.is_active ? 'bg-green-500' : 'bg-slate-300'}`}>
+        <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${p.is_active ? 'translate-x-[20px]' : 'translate-x-0.5'}`} />
       </button>
       <div className="flex gap-1 pr-1">
         <button onClick={() => handleEdit(p)} className="h-7 w-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors">
