@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useRadioStore } from '@/stores/useRadioStore';
 import Hls from 'hls.js';
 import { isYouTubeUrl, extractYouTubeId } from '@/lib/youtube';
@@ -82,11 +83,22 @@ const AudioEngine = () => {
     isPlaying, volume, getCurrentStreamUrl, getCurrentEnvironment,
     currentEnvironmentSlug, currentTrack, setPlaying,
     loadEnvironments, environmentsLoaded, loadLiveStatus,
-    environments, setBuffering, setStreamError,
+    environments, isBuffering, setBuffering, setStreamError,
   } = useRadioStore();
 
   // Poll ICY metadata from SHOUTcast/Icecast stream
   useStreamMetadata();
+
+  const location = useLocation();
+  const isAdminPath = location.pathname.startsWith('/admin');
+
+  // Auto-pause when entering admin panel
+  useEffect(() => {
+    if (isAdminPath && isPlaying) {
+      logAudioState('Admin detected', 'Pausing playback');
+      setPlaying(false);
+    }
+  }, [isAdminPath, isPlaying, setPlaying]);
 
   // Keep ref in sync
   useEffect(() => {
@@ -211,6 +223,7 @@ const AudioEngine = () => {
 
   // Cleanup helpers
   const cleanupHls = useCallback(() => {
+    logAudioState('CLEANUP HLS', 'Killing previous stream');
     hlsRef.current?.destroy();
     hlsRef.current = null;
     if (hlsRetryTimeoutRef.current) {
@@ -218,18 +231,29 @@ const AudioEngine = () => {
       hlsRetryTimeoutRef.current = null;
     }
     if (audioRef.current) {
-      // Clean up Safari native listeners if present
-      (audioRef.current as any).__nativeCleanup?.();
-      delete (audioRef.current as any).__nativeCleanup;
-      audioRef.current.pause();
-      audioRef.current.removeAttribute('src');
-      audioRef.current.load();
+      const audio = audioRef.current;
+      audio.pause();
+      // Remove events before clearing src
+      const nativeCleanup = (audio as any).__nativeCleanup;
+      if (nativeCleanup) {
+        nativeCleanup();
+        delete (audio as any).__nativeCleanup;
+      }
+      // Force hard reset of audio element
+      audio.src = '';
+      audio.removeAttribute('src');
+      audio.load();
+      logAudioState('CLEANUP HLS', 'Audio element hard reset');
     }
   }, []);
 
   const cleanupYt = useCallback(() => {
+    logAudioState('CLEANUP YT', 'Destroying YouTube player');
     ytPlayerRef.current?.destroy();
     ytPlayerRef.current = null;
+    if (ytContainerRef.current) {
+      ytContainerRef.current.innerHTML = '';
+    }
   }, []);
 
   // HLS initialization helper (extracted for retry logic)
@@ -549,7 +573,7 @@ const AudioEngine = () => {
 
   // Play/pause sync
   useEffect(() => {
-    if (!streamUrl) return;
+    if (!streamUrl || isBuffering) return;
 
     if (activeSourceType.current === 'youtube' && ytPlayerRef.current) {
       if (isPlaying) ytPlayerRef.current.playVideo();
@@ -565,7 +589,7 @@ const AudioEngine = () => {
         setTimeout(() => { userInitiatedPauseRef.current = false; }, 100);
       }
     }
-  }, [isPlaying, streamUrl]);
+  }, [isPlaying, streamUrl, isBuffering]);
 
   // Volume sync
   useEffect(() => {
@@ -648,6 +672,7 @@ const AudioEngine = () => {
     <>
       {/* Audio element IN the DOM for proper background playback on mobile */}
       <audio
+        key={streamUrl || 'idle'}
         ref={audioRef}
         playsInline
         preload="none"

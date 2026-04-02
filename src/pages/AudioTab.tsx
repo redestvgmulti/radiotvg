@@ -64,12 +64,18 @@ const AudioTab = () => {
 
   const nowPlaying = useMemo(() => {
     return programs.find(p => {
-      const timeMatch = p.day_of_week === currentDay && p.start_time.slice(0, 5) <= currentTime && p.end_time.slice(0, 5) > currentTime;
-      if (!timeMatch) return false;
-      if (p.station_id && env) return p.station_id === env.id;
-      return true;
+      // Basic time and day match
+      const isCorrectTime = p.day_of_week === currentDay && 
+                           p.start_time.slice(0, 5) <= currentTime && 
+                           p.end_time.slice(0, 5) > currentTime;
+      if (!isCorrectTime) return false;
+
+      // Station affinity match: if program identifies a station, it MUST match the current one.
+      // If it doesn't identify a station, it's considered global.
+      if (p.station_id) return env && p.station_id === env.id;
+      return true; 
     });
-  }, [programs, currentDay, currentTime, env]);
+  }, [programs, currentDay, currentTime, env?.id]);
 
   const upcoming = useMemo(() => {
     const sorted = [...programs]
@@ -81,7 +87,7 @@ const AudioTab = () => {
     const idx = sorted.findIndex(p => p.id === nowPlaying?.id);
     const after = idx >= 0 ? sorted.slice(idx + 1) : sorted;
     return after.slice(0, 4);
-  }, [programs, nowPlaying, env]);
+  }, [programs, nowPlaying?.id, env?.id]);
 
   return (
     <motion.div
@@ -199,6 +205,12 @@ const AudioTab = () => {
         </div>
       </section>
 
+
+      {/* ===== GÊNEROS / CANAIS ===== */}
+      <section className="px-4 mt-6">
+        <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] mb-4 px-1">Escolha seu Estilo</h2>
+        <EnvironmentSelector />
+      </section>
 
       {/* ===== NO AR AGORA ===== */}
       {nowPlaying && (

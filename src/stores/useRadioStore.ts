@@ -59,6 +59,7 @@ export const useRadioStore = create<RadioState>((set, get) => ({
     const env = get().environments.find(e => e.slug === slug);
     set({
       currentEnvironmentSlug: slug,
+      isBuffering: true,
       currentTrack: {
         title: env?.label || 'Rádio TVG ao Vivo',
         artist: env?.description || 'Transmissão Contínua',

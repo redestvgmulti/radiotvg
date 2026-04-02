@@ -15,7 +15,15 @@ const ProgramasTab = () => {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStation, setFilterStation] = useState<string | null>(null);
-  const { environments } = useRadioStore();
+  const { environments, getCurrentEnvironment } = useRadioStore();
+  const currentEnv = getCurrentEnvironment();
+
+  useEffect(() => {
+    // Sync local filter with global environment on mount and channel changes
+    if (currentEnv) {
+      setFilterStation(currentEnv.id);
+    }
+  }, [currentEnv?.id]);
 
   useEffect(() => {
     const fetchPrograms = async () => {
