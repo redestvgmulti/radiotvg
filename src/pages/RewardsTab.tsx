@@ -189,7 +189,7 @@ const RewardsTab = () => {
               <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em]">🏆 Ranking de Ouvintes</h2>
               <span className="text-[10px] text-muted-foreground">{ranking.length} ouvintes</span>
             </div>
-            <div className="space-y-2 overflow-y-auto pr-1" style={{ maxHeight: '480px' }}>
+            <div className="space-y-2 overflow-y-auto pr-2 scrollbar-thin" style={{ maxHeight: '480px' }}>
               {ranking.map((entry, i) => (
                 <motion.div key={entry.user_id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: Math.min(i * 0.04, 0.4) }}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${entry.user_id === user?.id ? 'bg-primary/5 border-primary/20' : 'bg-card/50 border-white/[0.04]'}`}>
