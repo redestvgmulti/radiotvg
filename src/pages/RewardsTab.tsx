@@ -46,7 +46,7 @@ const RewardsTab = () => {
   const fetchAll = useCallback(async () => {
     const [rewardsRes, rankingRes] = await Promise.all([
       supabase.from('rewards').select('*').eq('is_active', true).order('points_cost'),
-      supabase.from('profiles').select('display_name, total_points, user_id').order('total_points', { ascending: false }).order('total_listening_minutes', { ascending: false }).order('created_at', { ascending: true }).limit(10),
+      supabase.from('profiles').select('display_name, total_points, user_id').order('total_points', { ascending: false }).order('total_listening_minutes', { ascending: false }).order('created_at', { ascending: true }),
     ]);
     setRewards((rewardsRes.data as Reward[]) || []);
     setRanking((rankingRes.data as RankEntry[]) || []);
