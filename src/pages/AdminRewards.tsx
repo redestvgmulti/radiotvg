@@ -4,7 +4,7 @@ import { ArrowLeft, Plus, Save, Loader2, Power, Pencil, X, Trash2, Gift, Downloa
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { InputField, ImageUploadField } from '@/components/admin/AdminFormFields';
+import { InputField, ImageUploadField, TextAreaField } from '@/components/admin/AdminFormFields';
 
 interface Reward {
   id: string;
@@ -13,6 +13,9 @@ interface Reward {
   points_cost: number;
   partner: string;
   is_active: boolean;
+  descricao: string;
+  instrucoes_resgate: string;
+  observacoes: string;
 }
 
 const AdminRewards = () => {
@@ -22,7 +25,7 @@ const AdminRewards = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Reward>>({});
   const [showCreate, setShowCreate] = useState(false);
-  const [createForm, setCreateForm] = useState({ name: '', image_url: '', points_cost: 100, partner: '' });
+  const [createForm, setCreateForm] = useState({ name: '', image_url: '', points_cost: 100, partner: '', descricao: '', instrucoes_resgate: '', observacoes: '' });
   const [creating, setCreating] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
   
@@ -64,10 +67,17 @@ const AdminRewards = () => {
   };
 
   const handleCreate = async () => {
-    if (!createForm.name) return; setCreating(true);
-    const { error } = await supabase.from('rewards').insert({ name: createForm.name, image_url: createForm.image_url, points_cost: createForm.points_cost, partner: createForm.partner });
+    if (!createForm.name || !createForm.descricao) {
+      toast({ title: 'Atenção', description: 'Preencha nome e descrição.', variant: 'destructive' });
+      return;
+    }
+    setCreating(true);
+    const { error } = await supabase.from('rewards').insert({ 
+      name: createForm.name, image_url: createForm.image_url, points_cost: createForm.points_cost, partner: createForm.partner,
+      descricao: createForm.descricao, instrucoes_resgate: createForm.instrucoes_resgate, observacoes: createForm.observacoes || null
+    });
     if (error) toast({ title: 'Erro', description: error.message, variant: 'destructive' });
-    else { toast({ title: 'Recompensa criada!' }); setCreateForm({ name: '', image_url: '', points_cost: 100, partner: '' }); setShowCreate(false); fetchRewards(); }
+    else { toast({ title: 'Recompensa criada!' }); setCreateForm({ name: '', image_url: '', points_cost: 100, partner: '', descricao: '', instrucoes_resgate: '', observacoes: '' }); setShowCreate(false); fetchRewards(); }
     setCreating(false);
   };
 
@@ -75,8 +85,16 @@ const AdminRewards = () => {
   const cancelEdit = () => { setEditingId(null); setEditForm({}); };
 
   const saveEdit = async () => {
-    if (!editingId) return; setSaving(editingId);
-    const { error } = await supabase.from('rewards').update({ name: editForm.name, image_url: editForm.image_url, points_cost: editForm.points_cost, partner: editForm.partner }).eq('id', editingId);
+    if (!editingId) return; 
+    if (!editForm.name || !editForm.descricao) {
+      toast({ title: 'Atenção', description: 'Nome e descrição são obrigatórios.', variant: 'destructive' });
+      return; 
+    }
+    setSaving(editingId);
+    const { error } = await supabase.from('rewards').update({ 
+      name: editForm.name, image_url: editForm.image_url, points_cost: editForm.points_cost, partner: editForm.partner,
+      descricao: editForm.descricao, instrucoes_resgate: editForm.instrucoes_resgate, observacoes: editForm.observacoes || null
+    }).eq('id', editingId);
     if (error) toast({ title: 'Erro', description: error.message, variant: 'destructive' });
     else { toast({ title: 'Salvo!' }); cancelEdit(); fetchRewards(); }
     setSaving(null);
@@ -86,7 +104,19 @@ const AdminRewards = () => {
 
   const deleteReward = async (r: Reward) => {
     if (!confirm(`Excluir "${r.name}"?`)) return;
-    setSaving(r.id); await supabase.from('rewards').delete().eq('id', r.id); toast({ title: 'Excluído' }); fetchRewards(); setSaving(null);
+    setSaving(r.id); 
+    const { error } = await supabase.from('rewards').delete().eq('id', r.id); 
+    if (error) {
+      if (error.code === '23503' || error.message.includes('foreign key')) {
+        toast({ title: 'Exclusão Bloqueada', description: 'Esta recompensa possui vouchers gerados e não pode ser deletada para manter o histórico. Por favor, desative-a clicando no botão de ligar/desligar verde.', variant: 'destructive' });
+      } else {
+        toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      }
+    } else {
+      toast({ title: 'Excluído' }); 
+    }
+    fetchRewards(); 
+    setSaving(null);
   };
 
   return (
@@ -118,17 +148,76 @@ const AdminRewards = () => {
       <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 py-6 space-y-3">
         <AnimatePresence>
           {showCreate && (
-            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-              <div className="p-4 rounded-xl bg-white border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] space-y-3 mb-4">
-                <p className="text-xs font-semibold text-slate-600">Nova Recompensa</p>
-                <InputField label="Nome" value={createForm.name} onChange={v => setCreateForm({ ...createForm, name: v })} placeholder="Nome da recompensa" />
-                <ImageUploadField imageUrl={createForm.image_url} onUrlChange={url => setCreateForm({ ...createForm, image_url: url })} uploadKey="new-reward" uploading={uploading} onUpload={uploadImage} />
-                <InputField label="Pontos Necessários" value={String(createForm.points_cost)} onChange={v => setCreateForm({ ...createForm, points_cost: Number(v) || 0 })} type="number" />
-                <InputField label="Parceiro" value={createForm.partner} onChange={v => setCreateForm({ ...createForm, partner: v })} placeholder="Nome do parceiro" />
-                <button onClick={handleCreate} disabled={creating || !createForm.name}
-                  className="w-full h-9 rounded-lg bg-pink-500 text-white font-semibold text-xs flex items-center justify-center gap-2 disabled:opacity-60 hover:bg-pink-600 transition-colors shadow-sm">
-                  {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Criar Recompensa'}
-                </button>
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mb-6">
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
+                {/* Formulário */}
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4">
+                  <p className="text-sm font-bold text-slate-800 pb-2 border-b border-slate-100">Nova Recompensa</p>
+                  <InputField label="Nome" value={createForm.name} onChange={v => setCreateForm({ ...createForm, name: v })} placeholder="Ex: Copo Térmico Personalizado" />
+                  <TextAreaField label="Descrição (Obrigatório)" value={createForm.descricao} onChange={v => setCreateForm({ ...createForm, descricao: v })} placeholder="O que o usuário ganha? (Ex: 10% OFF na loja)" />
+                  <ImageUploadField imageUrl={createForm.image_url} onUrlChange={url => setCreateForm({ ...createForm, image_url: url })} uploadKey="new-reward" uploading={uploading} onUpload={uploadImage} />
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <InputField label="Pontos Necessários" value={String(createForm.points_cost)} onChange={v => setCreateForm({ ...createForm, points_cost: Number(v) || 0 })} type="number" />
+                    <InputField label="Parceiro (Opcional)" value={createForm.partner} onChange={v => setCreateForm({ ...createForm, partner: v })} placeholder="Ex: TVG Multi" />
+                  </div>
+                  
+                  <TextAreaField label="Instruções de Resgate (Opcional)" value={createForm.instrucoes_resgate} onChange={v => setCreateForm({ ...createForm, instrucoes_resgate: v })} placeholder="Como usar o voucher?" rows={3} />
+                  <TextAreaField label="Observações (Opcional)" value={createForm.observacoes} onChange={v => setCreateForm({ ...createForm, observacoes: v })} placeholder="Restrições, validade, etc." rows={2} />
+                  
+                  <button onClick={handleCreate} disabled={creating || !createForm.name}
+                    className="w-full h-11 rounded-xl bg-pink-500 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-pink-600 transition-colors shadow-sm">
+                    {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Cadastrar Recompensa'}
+                  </button>
+                </div>
+
+                {/* Live Preview */}
+                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/60 flex flex-col items-center">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 w-full text-center">Prévia em Tempo Real</p>
+                  
+                  <div className="w-[280px] flex flex-col rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden mb-4">
+                    <div className="relative h-36 bg-slate-100 border-b border-slate-100">
+                      {createForm.image_url ? (
+                        <img src={createForm.image_url} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-300">
+                          <Gift className="h-8 w-8 mb-1 opacity-50" />
+                          <span className="text-[10px] uppercase font-bold tracking-wider opacity-70">Sem Imagem</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4 flex-1 flex flex-col min-h-[100px]">
+                      <p className="text-sm font-bold text-slate-800 line-clamp-2 mb-3 leading-snug">
+                        {createForm.name || 'Nome da Recompensa'}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-2 mt-auto">
+                        <span className="text-[11px] font-black text-pink-600 bg-pink-50 px-2 py-0.5 rounded-full border border-pink-100">
+                          {createForm.points_cost || 0} pts
+                        </span>
+                        {createForm.partner && (
+                          <span className="text-[10px] text-slate-500 truncate mt-0.5 flex items-center max-w-[120px]">
+                            · {createForm.partner}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Preview of internal Details Modal */}
+                  <div className="w-[280px] p-4 bg-white border border-slate-200 shadow-sm rounded-2xl space-y-3 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-blue-500/20" />
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Simulação do Modal</p>
+                    <p className="text-[11px] text-slate-600 line-clamp-3 leading-relaxed">
+                      {createForm.descricao || 'Comece a digitar a descrição do benefício...'}
+                    </p>
+                    {createForm.observacoes && (
+                      <p className="text-[10px] text-orange-600/80 line-clamp-2 italic border-l-2 border-orange-200 pl-2">
+                        {createForm.observacoes}
+                      </p>
+                    )}
+                  </div>
+
+                </div>
               </div>
             </motion.div>
           )}
@@ -142,56 +231,69 @@ const AdminRewards = () => {
             <p className="text-xs text-slate-400">Nenhuma recompensa cadastrada.</p>
           </div>
         ) : (
-          rewards.map((r, i) => (
-            <motion.div key={r.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-              className={`rounded-xl bg-white border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden ${!r.is_active ? 'opacity-50' : ''}`}>
-              <div className="flex items-center gap-3 px-4 py-3.5">
-                {r.image_url ? (
-                  <img src={r.image_url} alt={r.name} className="h-12 w-12 rounded-lg object-cover border border-slate-100 flex-shrink-0" />
-                ) : (
-                  <div className="h-12 w-12 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0"><Gift className="h-5 w-5 text-slate-300" /></div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 truncate">{r.name}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[11px] font-bold text-pink-600">{r.points_cost} pts</span>
-                    {r.partner && <span className="text-[10px] text-slate-400">· {r.partner}</span>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {rewards.map((r, i) => (
+              <motion.div key={r.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.04 }}
+                className={`flex flex-col rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden ${!r.is_active ? 'opacity-50 grayscale-[30%]' : ''}`}>
+                
+                {/* Visual Area */}
+                <div className="relative h-36 bg-slate-100 border-b border-slate-100 group">
+                  {(editingId === r.id ? editForm.image_url : r.image_url) ? (
+                    <img src={(editingId === r.id ? editForm.image_url : r.image_url)} alt={r.name} className="w-full h-full object-cover transition-all" />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-300">
+                      <Gift className="h-8 w-8 mb-1 opacity-50" />
+                      <span className="text-[10px] uppercase font-bold tracking-wider opacity-70">Sem Imagem</span>
+                    </div>
+                  )}
+                  {/* Action overlay */}
+                  <div className="absolute top-2 right-2 flex gap-1.5 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => toggleActive(r)} disabled={saving === r.id || editingId === r.id}
+                      className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors shadow-sm backdrop-blur-md ${r.is_active ? 'bg-green-500/90 text-white hover:bg-green-600' : 'bg-slate-700/90 text-white hover:bg-slate-800'}`}>
+                      <Power className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => editingId === r.id ? cancelEdit() : startEdit(r)}
+                      className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors shadow-sm backdrop-blur-md ${editingId === r.id ? 'bg-blue-500/90 text-white' : 'bg-slate-800/80 text-white hover:bg-slate-900'}`}>
+                      {editingId === r.id ? <X className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+                    </button>
+                    <button onClick={() => deleteReward(r)} disabled={saving === r.id || editingId === r.id}
+                      className="h-8 w-8 rounded-lg flex items-center justify-center bg-red-500/90 shadow-sm backdrop-blur-md text-white hover:bg-red-600 transition-colors">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => toggleActive(r)} disabled={saving === r.id}
-                    className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${r.is_active ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>
-                    <Power className="h-4 w-4" />
-                  </button>
-                  <button onClick={() => editingId === r.id ? cancelEdit() : startEdit(r)}
-                    className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${editingId === r.id ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600'}`}>
-                    {editingId === r.id ? <X className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
-                  </button>
-                  <button onClick={() => deleteReward(r)} disabled={saving === r.id}
-                    className="h-8 w-8 rounded-lg flex items-center justify-center bg-slate-100 text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
 
-              <AnimatePresence>
-                {editingId === r.id && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
-                    <div className="px-4 pb-4 pt-3 space-y-3 border-t border-slate-100 bg-slate-50/50">
-                      <InputField label="Nome" value={editForm.name || ''} onChange={v => setEditForm({ ...editForm, name: v })} />
-                      <ImageUploadField imageUrl={editForm.image_url || ''} onUrlChange={url => setEditForm({ ...editForm, image_url: url })} uploadKey={r.id} uploading={uploading} onUpload={uploadImage} />
-                      <InputField label="Pontos Necessários" value={String(editForm.points_cost || 0)} onChange={v => setEditForm({ ...editForm, points_cost: Number(v) || 0 })} type="number" />
-                      <InputField label="Parceiro" value={editForm.partner || ''} onChange={v => setEditForm({ ...editForm, partner: v })} placeholder="Nome do parceiro" />
-                      <button onClick={saveEdit} disabled={saving === r.id}
-                        className="w-full h-9 rounded-lg bg-blue-600 text-white font-semibold text-xs flex items-center justify-center gap-1.5 disabled:opacity-60 hover:bg-blue-700 transition-colors shadow-sm">
-                        {saving === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><Save className="h-3.5 w-3.5" /> Salvar</>}
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          ))
+                {/* Content Area */}
+                <div className="p-4 flex-1 flex flex-col bg-white">
+                  <p className="text-sm font-bold text-slate-800 line-clamp-2 mb-3 leading-snug">{editingId === r.id ? editForm.name : r.name}</p>
+                  <div className="flex flex-wrap items-center gap-2 mb-1 mt-auto">
+                    <span className="text-[11px] font-black text-pink-600 bg-pink-50 px-2.5 py-1 rounded-full border border-pink-100">{editingId === r.id ? editForm.points_cost : r.points_cost} pts</span>
+                    {(editingId === r.id ? editForm.partner : r.partner) && <span className="text-[10px] text-slate-500 truncate mt-0.5 flex items-center max-w-[120px]">· {editingId === r.id ? editForm.partner : r.partner}</span>}
+                  </div>
+                </div>
+
+                <AnimatePresence>
+                  {editingId === r.id && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
+                      <div className="px-4 pb-4 pt-3 space-y-3 border-t border-slate-100 bg-slate-50/50">
+                        <InputField label="Nome" value={editForm.name || ''} onChange={v => setEditForm({ ...editForm, name: v })} />
+                        <TextAreaField label="Descrição (Obrigatório)" value={editForm.descricao || ''} onChange={v => setEditForm({ ...editForm, descricao: v })} />
+                        <ImageUploadField imageUrl={editForm.image_url || ''} onUrlChange={url => setEditForm({ ...editForm, image_url: url })} uploadKey={r.id} uploading={uploading} onUpload={uploadImage} />
+                        <TextAreaField label="Instruções de Resgate (Opcional)" value={editForm.instrucoes_resgate || ''} onChange={v => setEditForm({ ...editForm, instrucoes_resgate: v })} rows={4} />
+                        <TextAreaField label="Observações (Opcional)" value={editForm.observacoes || ''} onChange={v => setEditForm({ ...editForm, observacoes: v })} rows={2} />
+                        <InputField label="Pontos Necessários" value={String(editForm.points_cost || 0)} onChange={v => setEditForm({ ...editForm, points_cost: Number(v) || 0 })} type="number" />
+                        <InputField label="Parceiro" value={editForm.partner || ''} onChange={v => setEditForm({ ...editForm, partner: v })} placeholder="Nome do parceiro" />
+                        <button onClick={saveEdit} disabled={saving === r.id}
+                          className="w-full h-9 rounded-lg bg-blue-600 text-white font-semibold text-xs flex items-center justify-center gap-1.5 disabled:opacity-60 hover:bg-blue-700 transition-colors shadow-sm">
+                          {saving === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><Save className="h-3.5 w-3.5" /> Salvar</>}
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            ))}
+          </div>
         )}
       </div>
     </>

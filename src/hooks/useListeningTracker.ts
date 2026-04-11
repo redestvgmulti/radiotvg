@@ -21,7 +21,8 @@ export const useListeningTracker = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return; // Only track logged-in users
 
-      const env = getCurrentEnvironment();
+      // Get current environment from state to avoid effect re-trigger on change
+      const env = useRadioStore.getState().getCurrentEnvironment();
       try {
         await supabase.functions.invoke('listening-heartbeat', {
           body: { station_id: env?.id || null },
@@ -40,5 +41,5 @@ export const useListeningTracker = () => {
         intervalRef.current = null;
       }
     };
-  }, [isPlaying, getCurrentEnvironment]);
+  }, [isPlaying]);
 };

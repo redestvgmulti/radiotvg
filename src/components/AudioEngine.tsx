@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useRadioStore } from '@/stores/useRadioStore';
 import Hls from 'hls.js';
 import { isYouTubeUrl, extractYouTubeId } from '@/lib/youtube';
@@ -82,11 +83,22 @@ const AudioEngine = () => {
     isPlaying, volume, getCurrentStreamUrl, getCurrentEnvironment,
     currentEnvironmentSlug, currentTrack, setPlaying,
     loadEnvironments, environmentsLoaded, loadLiveStatus,
-    environments, setBuffering, setStreamError,
+    environments, isBuffering, setBuffering, setStreamError,
   } = useRadioStore();
 
   // Poll ICY metadata from SHOUTcast/Icecast stream
   useStreamMetadata();
+
+  const location = useLocation();
+  const isAdminPath = location.pathname.startsWith('/admin');
+
+  // Auto-pause when entering admin panel
+  useEffect(() => {
+    if (isAdminPath && isPlaying) {
+      logAudioState('Admin detected', 'Pausing playback');
+      setPlaying(false);
+    }
+  }, [isAdminPath, isPlaying, setPlaying]);
 
   // Keep ref in sync
   useEffect(() => {
@@ -211,6 +223,7 @@ const AudioEngine = () => {
 
   // Cleanup helpers
   const cleanupHls = useCallback(() => {
+    logAudioState('CLEANUP HLS', 'Killing previous stream');
     hlsRef.current?.destroy();
     hlsRef.current = null;
     if (hlsRetryTimeoutRef.current) {
@@ -218,18 +231,29 @@ const AudioEngine = () => {
       hlsRetryTimeoutRef.current = null;
     }
     if (audioRef.current) {
-      // Clean up Safari native listeners if present
-      (audioRef.current as any).__nativeCleanup?.();
-      delete (audioRef.current as any).__nativeCleanup;
-      audioRef.current.pause();
-      audioRef.current.removeAttribute('src');
-      audioRef.current.load();
+      const audio = audioRef.current;
+      audio.pause();
+      // Remove events before clearing src
+      const nativeCleanup = (audio as any).__nativeCleanup;
+      if (nativeCleanup) {
+        nativeCleanup();
+        delete (audio as any).__nativeCleanup;
+      }
+      // Force hard reset of audio element
+      audio.src = '';
+      audio.removeAttribute('src');
+      audio.load();
+      logAudioState('CLEANUP HLS', 'Audio element hard reset');
     }
   }, []);
 
   const cleanupYt = useCallback(() => {
+    logAudioState('CLEANUP YT', 'Destroying YouTube player');
     ytPlayerRef.current?.destroy();
     ytPlayerRef.current = null;
+    if (ytContainerRef.current) {
+      ytContainerRef.current.innerHTML = '';
+    }
   }, []);
 
   // HLS initialization helper (extracted for retry logic)
@@ -259,7 +283,27 @@ const AudioEngine = () => {
           } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
             logAudioState('HLS fatal error', 'MEDIA — recovering');
             setStreamError('Erro de mídia. Recuperando...');
-            hls.recoverMediaError();
+            // Prevent infinite MEDIA_ERROR loops by checking elapsed time
+            const now = Date.now();
+            if (!hlsRef.current) return;
+            const hlsInstance = hlsRef.current as any;
+            if (!hlsInstance._mediaErrorTime || now - hlsInstance._mediaErrorTime > 3000) {
+              hlsInstance._mediaErrorTime = now;
+              hlsInstance._mediaErrorCount = 1;
+              hls.recoverMediaError();
+            } else {
+              hlsInstance._mediaErrorCount++;
+              if (hlsInstance._mediaErrorCount > 3) {
+                logAudioState('HLS fatal error', 'MEDIA loop detected. Reinitializing.');
+                hls.destroy();
+                hlsRef.current = null;
+                setTimeout(() => initHls(url), 2000);
+                return;
+              } else {
+                hls.swapAudioCodec();
+                hls.recoverMediaError();
+              }
+            }
           } else {
             // Other fatal errors — full retry after 10s
             logAudioState('HLS fatal error', `OTHER (${data.details}) — will retry in 10s`);
@@ -295,19 +339,9 @@ const AudioEngine = () => {
       };
       audio.addEventListener('error', onNativeError);
 
-      // System interruption detection (phone calls, Siri) — stop playback
-      const onInterruptPause = () => {
-        if (isPlayingRef.current && !userInitiatedPauseRef.current && !isRetryingRef.current && !audio.error) {
-          logAudioState('System interruption detected (native)', 'stopping playback');
-          setPlaying(false);
-        }
-      };
-      audio.addEventListener('pause', onInterruptPause);
-
       // Store cleanup refs for this path
       const nativeCleanup = () => {
         audio.removeEventListener('error', onNativeError);
-        audio.removeEventListener('pause', onInterruptPause);
       };
       // Attach to audio element for cleanup in cleanupHls
       (audio as any).__nativeCleanup = nativeCleanup;
@@ -440,18 +474,8 @@ const AudioEngine = () => {
         };
         audio.addEventListener('error', onDirectError);
 
-        // System interruption detection (phone calls) — stop playback
-        const onDirectPause = () => {
-          if (isPlayingRef.current && !userInitiatedPauseRef.current && !isRetryingRef.current && !audio.error) {
-            logAudioState('System interruption detected (direct)', 'stopping playback');
-            setPlaying(false);
-          }
-        };
-        audio.addEventListener('pause', onDirectPause);
-
         (audio as any).__nativeCleanup = () => {
           audio.removeEventListener('error', onDirectError);
-          audio.removeEventListener('pause', onDirectPause);
         };
       }
     }
@@ -459,16 +483,62 @@ const AudioEngine = () => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const onWaiting = () => { setBuffering(true); logAudioState('audio waiting'); };
-    const onPlaying = () => { setBuffering(false); setStreamError(null); logAudioState('audio playing'); };
-    const onPause = () => logAudioState('audio pause');
-    const onStalled = () => logAudioState('audio stalled');
+    let stallRecoveryTimeout: ReturnType<typeof setTimeout> | null = null;
+    const clearStallRecovery = () => {
+      if (stallRecoveryTimeout) {
+        clearTimeout(stallRecoveryTimeout);
+        stallRecoveryTimeout = null;
+      }
+    };
+
+    const recoverStall = () => {
+      logAudioState('Stream stalled too long', 'forcing reconnect');
+      if (activeSourceType.current === 'hls' && hlsRef.current) {
+        hlsRef.current.startLoad();
+      } else if (audioRef.current && activeSourceType.current !== 'youtube') {
+        audioRef.current.load();
+        if (isPlayingRef.current) audioRef.current.play().catch(() => {});
+      }
+    };
+
+    const onWaiting = () => { 
+      setBuffering(true); 
+      logAudioState('audio waiting');
+      if (!stallRecoveryTimeout) stallRecoveryTimeout = setTimeout(recoverStall, 12000);
+    };
+    const onPlaying = () => { 
+      setBuffering(false); 
+      setStreamError(null); 
+      logAudioState('audio playing');
+      clearStallRecovery();
+      if (hlsRetryTimeoutRef.current) {
+        clearTimeout(hlsRetryTimeoutRef.current);
+        hlsRetryTimeoutRef.current = null;
+        isRetryingRef.current = false;
+      }
+    };
+    const onPause = () => {
+      logAudioState('audio pause');
+      if (!isPlayingRef.current) {
+        clearStallRecovery();
+      } else {
+        logAudioState('System/OS Pause Detected', 'Staying paused to respect external media/calls');
+        // We no longer auto-resume in a loop here to avoid overlapping with phone calls/instagram.
+        // The resume focus logic below handles re-starting when the user returns to the app.
+      }
+    };
+    const onStalled = () => { 
+      logAudioState('audio stalled');
+      if (!stallRecoveryTimeout) stallRecoveryTimeout = setTimeout(recoverStall, 12000);
+    };
+
     audio.addEventListener('waiting', onWaiting);
     audio.addEventListener('playing', onPlaying);
     audio.addEventListener('pause', onPause);
     audio.addEventListener('stalled', onStalled);
 
     return () => {
+      clearStallRecovery();
       cleanupHls();
       audio.removeEventListener('waiting', onWaiting);
       audio.removeEventListener('playing', onPlaying);
@@ -479,7 +549,7 @@ const AudioEngine = () => {
 
   // Play/pause sync
   useEffect(() => {
-    if (!streamUrl) return;
+    if (!streamUrl || isBuffering) return;
 
     if (activeSourceType.current === 'youtube' && ytPlayerRef.current) {
       if (isPlaying) ytPlayerRef.current.playVideo();
@@ -495,7 +565,7 @@ const AudioEngine = () => {
         setTimeout(() => { userInitiatedPauseRef.current = false; }, 100);
       }
     }
-  }, [isPlaying, streamUrl]);
+  }, [isPlaying, streamUrl, isBuffering]);
 
   // Volume sync
   useEffect(() => {
@@ -503,14 +573,22 @@ const AudioEngine = () => {
     if (ytPlayerRef.current) ytPlayerRef.current.setVolume(volume * 100);
   }, [volume]);
 
-  // Re-resume playback when page becomes visible (handles mobile browser throttling)
+  // Re-resume playback when page becomes visible or focused (handles mobile browser throttling, phone calls, whatsapp voice notes)
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && isPlayingRef.current) {
-        logAudioState('visibility resume', 'checking if audio needs restart');
+    const handleResume = () => {
+      // document.hidden checks if tab is literally hidden, but we also want to catch focus
+      if (!document.hidden && isPlayingRef.current) {
+        logAudioState('resume trigger', 'checking if audio needs restart');
         if (activeSourceType.current === 'hls' && audioRef.current) {
           if (audioRef.current.paused) {
-            logAudioState('visibility resume', 'audio was paused — restarting');
+            logAudioState('resume trigger', 'audio was paused — restarting');
+            
+            // If it's a direct stream and we had a long OS pause, the buffer might be stale or broken
+            // A quick re-assignment fixes the "infinite silence" issue after phone calls
+            if (!useRadioStore.getState().getCurrentStreamUrl()?.includes('.m3u8')) {
+               audioRef.current.load();
+            }
+            
             audioRef.current.play().catch(() => {});
           }
         } else if (activeSourceType.current === 'youtube' && ytPlayerRef.current) {
@@ -518,8 +596,18 @@ const AudioEngine = () => {
         }
       }
     };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    
+    document.addEventListener('visibilitychange', handleResume);
+    window.addEventListener('focus', handleResume);
+    
+    // Also try to forcefully hook to Cordova/Capacitor resume event if ever packaged in the future
+    document.addEventListener('resume', handleResume);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleResume);
+      window.removeEventListener('focus', handleResume);
+      document.removeEventListener('resume', handleResume);
+    };
   }, []);
 
   // Media Session API
@@ -560,6 +648,7 @@ const AudioEngine = () => {
     <>
       {/* Audio element IN the DOM for proper background playback on mobile */}
       <audio
+        key={streamUrl || 'idle'}
         ref={audioRef}
         playsInline
         preload="none"

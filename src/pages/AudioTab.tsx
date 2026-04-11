@@ -22,6 +22,7 @@ const DAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sáb
 interface Program {
   id: string; name: string; host: string; day_of_week: number;
   start_time: string; end_time: string; is_active: boolean; station_id: string | null;
+  sort_order: number;
 }
 
 const AudioTab = () => {
@@ -41,16 +42,30 @@ const AudioTab = () => {
   const [whatsappNumber, setWhatsappNumber] = useState<string | null>(null);
   const [whatsappMessage, setWhatsappMessage] = useState<string>('');
   const [instaPosts, setInstaPosts] = useState<{ id: string; post_url: string; thumbnail_url: string | null }[]>([]);
+  const [currentTime, setCurrentTime] = useState(`${String(new Date().getHours()).padStart(2, '0')}:${String(new Date().getMinutes()).padStart(2, '0')}`);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      setCurrentTime(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
+    }, 30000); // Atualiza a cada 30 seg
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const load = async () => {
       const [progsRes, wpRes, wpMsgRes, instaRes] = await Promise.all([
-        supabase.from('programs').select('*').eq('is_active', true).order('day_of_week').order('start_time'),
+        supabase.from('programs')
+          .select('*')
+          .eq('is_active', true)
+          .order('day_of_week')
+          .order('start_time')
+          .order('sort_order', { ascending: true }),
         supabase.from('radio_settings').select('value').eq('key', 'whatsapp_number').maybeSingle(),
         supabase.from('radio_settings').select('value').eq('key', 'whatsapp_message').maybeSingle(),
         supabase.from('instagram_posts').select('id, post_url, thumbnail_url').eq('is_active', true).order('sort_order').limit(6),
       ]);
-      setPrograms((progsRes.data as Program[]) || []);
+      setPrograms((progsRes.data as unknown as Program[]) || []);
       if (wpRes.data?.value) setWhatsappNumber(wpRes.data.value);
       if (wpMsgRes.data?.value) setWhatsappMessage(wpMsgRes.data.value);
       setInstaPosts((instaRes.data as any[]) || []);
@@ -58,30 +73,32 @@ const AudioTab = () => {
     load();
   }, []);
 
-  const now = new Date();
-  const currentDay = now.getDay();
-  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const currentDay = new Date().getDay();
 
   const nowPlaying = useMemo(() => {
     return programs.find(p => {
-      const timeMatch = p.day_of_week === currentDay && p.start_time.slice(0, 5) <= currentTime && p.end_time.slice(0, 5) > currentTime;
-      if (!timeMatch) return false;
-      if (p.station_id && env) return p.station_id === env.id;
-      return true;
+      const isCorrectTime = p.day_of_week === currentDay && 
+                           p.start_time.slice(0, 5) <= currentTime && 
+                           p.end_time.slice(0, 5) > currentTime;
+      if (!isCorrectTime) return false;
+      if (p.station_id) return env && p.station_id === env.id;
+      return true; 
     });
-  }, [programs, currentDay, currentTime, env]);
+  }, [programs, currentDay, currentTime, env?.id]);
 
   const upcoming = useMemo(() => {
-    const sorted = [...programs]
-      .filter(p => !p.station_id || (env && p.station_id === env.id))
+    return programs
+      .filter(p => 
+        p.day_of_week === currentDay && 
+        p.start_time.slice(0, 5) > currentTime &&
+        (!p.station_id || (env && p.station_id === env.id))
+      )
       .sort((a, b) => {
-        if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
-        return a.start_time.localeCompare(b.start_time);
-      });
-    const idx = sorted.findIndex(p => p.id === nowPlaying?.id);
-    const after = idx >= 0 ? sorted.slice(idx + 1) : sorted;
-    return after.slice(0, 4);
-  }, [programs, nowPlaying, env]);
+        if (a.start_time !== b.start_time) return a.start_time.localeCompare(b.start_time);
+        return (a.sort_order || 0) - (b.sort_order || 0);
+      })
+      .slice(0, 4);
+  }, [programs, currentTime, currentDay, env?.id]);
 
   return (
     <motion.div
@@ -120,9 +137,9 @@ const AudioTab = () => {
               {nowPlaying?.name || env?.label || 'Rádio TVG'}
             </motion.h1>
 
-            {nowPlaying && (
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-muted-foreground text-sm mb-1">
-                com <span className="text-foreground/80 font-medium">{nowPlaying.host}</span>
+            {nowPlaying && nowPlaying.host && nowPlaying.host.trim() !== "" && (
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-muted-foreground text-sm mb-1 uppercase tracking-wider font-semibold">
+                com <span className="text-secondary font-bold">{nowPlaying.host}</span>
               </motion.p>
             )}
 
@@ -165,24 +182,46 @@ const AudioTab = () => {
             </div>
 
             {/* Volume control */}
-            <div className="flex items-center gap-3 mt-4 w-full max-w-[240px]">
-              <button onClick={() => setVolume(volume > 0 ? 0 : 0.8)} className="text-muted-foreground hover:text-foreground transition-colors">
-                {volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            <div className="flex items-center gap-3 mt-6 w-full max-w-[280px] group bg-white/5 backdrop-blur-sm px-4 py-3 rounded-2xl border border-white/10">
+              <button 
+                onClick={() => setVolume(volume > 0 ? 0 : 0.8)} 
+                className="text-muted-foreground hover:text-primary transition-colors duration-300 transform hover:scale-110 active:scale-95"
+                title={volume === 0 ? "Ativar som" : "Desativar som"}
+              >
+                {volume === 0 ? <VolumeX className="h-5 w-5 text-destructive" /> : <Volume2 className="h-5 w-5" />}
               </button>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.01}
-                value={volume}
-                onChange={(e) => setVolume(parseFloat(e.target.value))}
-                className="flex-1 h-1 appearance-none bg-border rounded-full cursor-pointer accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:border-0"
-              />
+              <div className="flex-1 relative flex items-center h-6">
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={volume}
+                  onChange={(e) => setVolume(parseFloat(e.target.value))}
+                  className="w-full h-1.5 appearance-none bg-white/10 rounded-full cursor-pointer accent-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all
+                    [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(255,255,255,0.5)] [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-primary [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-125 [&::-webkit-slider-thumb]:active:scale-110
+                    [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-[0_0_10px_rgba(255,255,255,0.5)] [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-primary [&::-moz-range-thumb]:hover:scale-125 [&::-moz-range-thumb]:active:scale-110"
+                />
+                {/* Visual indicator of volume level */}
+                <div 
+                  className="absolute left-0 top-1/2 -translate-y-1/2 h-1.5 bg-primary rounded-full pointer-events-none transition-all duration-75"
+                  style={{ width: `${volume * 100}%` }}
+                />
+              </div>
+              <span className="text-[10px] font-mono font-bold text-muted-foreground w-8 text-right">
+                {Math.round(volume * 100)}%
+              </span>
             </div>
           </div>
         </div>
       </section>
 
+
+      {/* ===== GÊNEROS / CANAIS ===== */}
+      <section className="px-4 mt-6">
+        <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] mb-4 px-1">Escolha seu Estilo</h2>
+        <EnvironmentSelector />
+      </section>
 
       {/* ===== NO AR AGORA ===== */}
       {nowPlaying && (
@@ -198,7 +237,9 @@ const AudioTab = () => {
                 <p className="text-foreground font-display font-bold text-base truncate">{nowPlaying.name}</p>
                 <span className="flex-shrink-0 w-2 h-2 rounded-full bg-live animate-pulse" />
               </div>
-              <p className="text-muted-foreground text-xs mt-0.5">com {nowPlaying.host}</p>
+              {nowPlaying.host && nowPlaying.host.trim() !== "" && (
+                <p className="text-muted-foreground text-xs mt-0.5">com {nowPlaying.host}</p>
+              )}
               <p className="text-muted-foreground/60 text-[10px] mt-0.5">
                 {nowPlaying.start_time.slice(0, 5)} – {nowPlaying.end_time.slice(0, 5)}
               </p>
@@ -252,7 +293,9 @@ const AudioTab = () => {
                 <div className="w-px h-8 bg-border/50" />
                 <div className="flex-1 min-w-0">
                   <p className="text-foreground text-sm font-semibold truncate">{prog.name}</p>
-                  <p className="text-muted-foreground text-[11px]">com {prog.host}</p>
+                  {prog.host && prog.host.trim() !== "" && (
+                    <p className="text-muted-foreground text-[11px]">com {prog.host}</p>
+                  )}
                 </div>
               </motion.div>
             ))}

@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.1"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       ads: {
@@ -294,31 +319,61 @@ export type Database = {
           },
         ]
       }
+      reward_terms_acceptances: {
+        Row: {
+          accepted_at: string
+          id: string
+          terms_version: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          id?: string
+          terms_version: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string
+          id?: string
+          terms_version?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       rewards: {
         Row: {
           created_at: string
+          descricao: string
           id: string
           image_url: string
+          instrucoes_resgate: string
           is_active: boolean
           name: string
+          observacoes: string | null
           partner: string
           points_cost: number
         }
         Insert: {
           created_at?: string
+          descricao?: string
           id?: string
           image_url?: string
+          instrucoes_resgate?: string
           is_active?: boolean
           name: string
+          observacoes?: string | null
           partner?: string
           points_cost?: number
         }
         Update: {
           created_at?: string
+          descricao?: string
           id?: string
           image_url?: string
+          instrucoes_resgate?: string
           is_active?: boolean
           name?: string
+          observacoes?: string | null
           partner?: string
           points_cost?: number
         }
@@ -387,6 +442,7 @@ export type Database = {
       vouchers: {
         Row: {
           created_at: string | null
+          expires_at: string
           id: string
           points_spent: number
           protocol_number: string
@@ -400,6 +456,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          expires_at?: string
           id?: string
           points_spent: number
           protocol_number: string
@@ -413,6 +470,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          expires_at?: string
           id?: string
           points_spent?: number
           protocol_number?: string
@@ -446,6 +504,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_admin_vouchers: {
+        Args: never
+        Returns: {
+          created_at: string
+          display_name: string
+          email: string
+          expires_at: string
+          id: string
+          points_spent: number
+          protocol_number: string
+          redeemed_at: string
+          reward_name: string
+          status: string
+          voucher_code: string
+        }[]
+      }
       get_coupon_export: {
         Args: never
         Returns: {
@@ -462,6 +536,7 @@ export type Database = {
           created_at: string
           display_name: string
           email: string
+          expires_at: string
           points_spent: number
           protocol_number: string
           redeemed_at: string
@@ -610,6 +685,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ["admin", "user"],

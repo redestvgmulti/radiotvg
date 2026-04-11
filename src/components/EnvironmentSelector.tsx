@@ -11,8 +11,14 @@ const localImageMap: Record<string, string> = {
 };
 
 const EnvironmentSelector = () => {
-  const { environments, currentEnvironmentSlug, setEnvironment } = useRadioStore();
+  const { environments, currentEnvironmentSlug, setEnvironment, isBuffering } = useRadioStore();
   if (environments.length === 0) return null;
+
+  const handleSelect = (slug: string) => {
+    // Prevent switching while a load is in progress to avoid overlapping audio
+    if (isBuffering && slug !== currentEnvironmentSlug) return;
+    setEnvironment(slug);
+  };
 
   return (
     <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 md:grid md:grid-cols-4 md:overflow-x-visible">
@@ -23,7 +29,7 @@ const EnvironmentSelector = () => {
         return (
           <motion.button
             key={env.id}
-            onClick={() => setEnvironment(env.slug)}
+            onClick={() => handleSelect(env.slug)}
             whileTap={{ scale: 0.95 }}
             className={`relative flex-shrink-0 w-[130px] h-[80px] md:w-full md:h-[90px] rounded-2xl overflow-hidden transition-all duration-250 ${
               isActive

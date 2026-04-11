@@ -54,11 +54,11 @@ serve(async (req) => {
     };
 
     if (target === "all" || !target) {
-      payload.included_segments = ["Subscribed Users"];
+      payload.included_segments = ["Total Subscriptions"];
     } else if (target === "active") {
-      payload.included_segments = ["Active Users"];
+      payload.included_segments = ["Active Subscriptions"];
     } else if (target === "inactive") {
-      payload.included_segments = ["Inactive Users"];
+      payload.included_segments = ["Inactive Subscriptions"];
     }
 
     if (icon_url) {

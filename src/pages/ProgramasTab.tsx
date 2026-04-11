@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Headphones, Loader2 } from 'lucide-react';
 import { useRadioStore, StreamEnvironment } from '@/stores/useRadioStore';
-import logoRadio from '@/assets/logo-radio-tvg-new.png';
 import { supabase } from '@/integrations/supabase/client';
 
 const DAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
@@ -10,28 +9,51 @@ const DAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sáb
 interface Program {
   id: string; name: string; host: string; day_of_week: number;
   start_time: string; end_time: string; is_active: boolean; station_id: string | null;
+  sort_order: number;
 }
 
 const ProgramasTab = () => {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStation, setFilterStation] = useState<string | null>(null);
-  const { environments } = useRadioStore();
+  const { environments, getCurrentEnvironment } = useRadioStore();
+  const currentEnv = getCurrentEnvironment();
+
+  useEffect(() => {
+    // Sync local filter with global environment on mount and channel changes
+    if (currentEnv) {
+      setFilterStation(currentEnv.id);
+    }
+  }, [currentEnv?.id]);
 
   useEffect(() => {
     const fetchPrograms = async () => {
-      const { data } = await supabase.from('programs').select('*').eq('is_active', true).order('day_of_week').order('start_time');
-      setPrograms((data as Program[]) || []);
+      const { data } = await supabase.from('programs')
+        .select('*')
+        .eq('is_active', true)
+        .order('day_of_week')
+        .order('start_time')
+        .order('sort_order', { ascending: true });
+      setPrograms((data as unknown as Program[]) || []);
       setLoading(false);
     };
     fetchPrograms();
   }, []);
 
+  const [currentTimeStr, setCurrentTimeStr] = useState(`${String(new Date().getHours()).padStart(2, '0')}:${String(new Date().getMinutes()).padStart(2, '0')}`);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      setCurrentTimeStr(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
+    }, 30000); 
+    return () => clearInterval(timer);
+  }, []);
+
   const now = new Date();
   const currentDay = now.getDay();
-  const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-  const filtered = programs.filter(p => !filterStation || p.station_id === filterStation);
+  const filtered = programs.filter(p => !filterStation || !p.station_id || p.station_id === filterStation);
   const nowPlaying = filtered.find(
     p => p.day_of_week === currentDay && p.start_time.slice(0, 5) <= currentTimeStr && p.end_time.slice(0, 5) > currentTimeStr
   );
@@ -43,8 +65,9 @@ const ProgramasTab = () => {
     return acc;
   }, {});
 
-  // Sort days starting from today
-  const sortedDays = Array.from({ length: 7 }, (_, i) => (currentDay + i) % 7).filter(d => byDay[d]?.length);
+  // Sort days starting from today. ALWAYS include today in the view even if empty to keep layout consistent.
+  const sortedDays = Array.from({ length: 7 }, (_, i) => (currentDay + i) % 7)
+    .filter(d => d === currentDay || byDay[d]?.length);
 
   const getStationLabel = (id: string | null) => {
     if (!id) return null;
@@ -53,11 +76,7 @@ const ProgramasTab = () => {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="min-h-screen pb-36">
-      <header className="px-5 pt-5 pb-3">
-        <div className="h-10 flex items-center">
-          <img src={logoRadio} alt="Rádio TVG" className="h-full w-auto object-contain" />
-        </div>
-      </header>
+
 
       <div className="px-4 mb-4">
         <h1 className="text-lg font-display font-bold text-foreground mb-3">Programação</h1>
@@ -87,8 +106,10 @@ const ProgramasTab = () => {
               <span className="text-[9px] font-bold text-primary-foreground uppercase tracking-wider">Ao Vivo</span>
             </div>
             <div className="relative p-4 pt-12">
-              <p className="text-foreground text-lg font-display font-bold">{nowPlaying.name}</p>
-              <p className="text-muted-foreground text-sm mt-0.5">com {nowPlaying.host}</p>
+              <p className="text-foreground text-lg font-display font-bold leading-none">{nowPlaying.name}</p>
+              {nowPlaying.host && nowPlaying.host.trim() !== "" && (
+                <p className="text-muted-foreground text-sm mt-0.5">com {nowPlaying.host}</p>
+              )}
               <div className="flex items-center gap-2 mt-1">
                 <Clock className="h-3 w-3 text-muted-foreground" />
                 <p className="text-muted-foreground text-xs">{nowPlaying.start_time.slice(0, 5)} – {nowPlaying.end_time.slice(0, 5)}</p>
@@ -133,7 +154,9 @@ const ProgramasTab = () => {
                           <p className="text-sm font-semibold text-foreground truncate">{prog.name}</p>
                           {isNow && <span className="w-2 h-2 rounded-full bg-live animate-pulse flex-shrink-0" />}
                         </div>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">com {prog.host}</p>
+                        {prog.host && prog.host.trim() !== "" && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5">com {prog.host}</p>
+                        )}
                       </div>
                       {getStationLabel(prog.station_id) && (
                         <span className="text-[8px] bg-muted px-2 py-0.5 rounded-full text-muted-foreground font-medium flex-shrink-0">

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, Loader2, ArrowLeft, User } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import logoRadio from '@/assets/logo-radio-tvg-new.png';
 
 const ListenerSignup = () => {
@@ -13,6 +14,7 @@ const ListenerSignup = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -21,7 +23,7 @@ const ListenerSignup = () => {
     if (password.length < 6) { setError('A senha deve ter pelo menos 6 caracteres.'); return; }
     setLoading(true);
     try {
-      const { error: authError } = await supabase.auth.signUp({
+      const { data, error: authError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
@@ -30,7 +32,16 @@ const ListenerSignup = () => {
         },
       });
       if (authError) throw authError;
-      setSuccess(true);
+
+      // Se o Supabase estiver configurado para NÃO exigir confirmação de e-mail,
+      // ele já retorna a sessão ativa na hora de criar.
+      if (data.session) {
+        toast({ title: 'Conta criada com sucesso!' });
+        navigate('/perfil');
+      } else {
+        // Exige confirmação por email
+        setSuccess(true);
+      }
     } catch (err: any) {
       setError(
         err.message.includes('already registered')

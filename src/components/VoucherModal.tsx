@@ -1,7 +1,7 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
-import { Copy, Check, Ticket } from 'lucide-react';
-import { useState } from 'react';
+import { Copy, Check, Ticket, Clock, MapPin } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 interface VoucherModalProps {
   open: boolean;
@@ -10,10 +10,38 @@ interface VoucherModalProps {
   protocolNumber: string;
   rewardName: string;
   pointsSpent: number;
+  expiresAt?: string;
 }
 
-const VoucherModal = ({ open, onOpenChange, voucherCode, protocolNumber, rewardName, pointsSpent }: VoucherModalProps) => {
+const VoucherModal = ({ open, onOpenChange, voucherCode, protocolNumber, rewardName, pointsSpent, expiresAt }: VoucherModalProps) => {
   const [copied, setCopied] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<string>('');
+  const [isExpired, setIsExpired] = useState(false);
+
+  useEffect(() => {
+    if (!open || !expiresAt) return;
+    
+    const updateCountdown = () => {
+      const diffMs = new Date(expiresAt).getTime() - Date.now();
+      if (diffMs <= 0) {
+        setIsExpired(true);
+        setTimeLeft('Voucher expirado');
+      } else {
+        setIsExpired(false);
+        const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        
+        if (days > 0) setTimeLeft(`Expira em ${days} dia${days > 1 ? 's' : ''} e ${hours}h`);
+        else if (hours > 0) setTimeLeft(`Expira em ${hours}h e ${minutes}m`);
+        else setTimeLeft(`Últimas horas: ${minutes}m`);
+      }
+    };
+    
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 60000); // update every minute
+    return () => clearInterval(interval);
+  }, [open, expiresAt]);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(voucherCode);
@@ -23,7 +51,10 @@ const VoucherModal = ({ open, onOpenChange, voucherCode, protocolNumber, rewardN
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm mx-auto rounded-3xl border-primary/20 bg-card p-0 overflow-hidden">
+      <DialogContent className="w-[92vw] max-w-sm mx-auto sm:w-full rounded-3xl border-primary/20 bg-card p-0 overflow-hidden shadow-2xl">
+        <DialogTitle className="sr-only">Seu Voucher de Recompensa</DialogTitle>
+        <DialogDescription className="sr-only">Código do voucher emitido com sucesso e contador de dias para expirar.</DialogDescription>
+        
         {/* Header gradient */}
         <div className="bg-gradient-to-br from-primary/20 to-accent/10 px-6 pt-6 pb-4 text-center">
           <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto mb-3">
@@ -64,7 +95,7 @@ const VoucherModal = ({ open, onOpenChange, voucherCode, protocolNumber, rewardN
 
           {/* QR Code via API */}
           <div className="flex justify-center">
-            <div className="p-3 bg-white rounded-xl">
+            <div className={`p-3 bg-white rounded-xl ${isExpired ? 'opacity-30 grayscale' : ''}`}>
               <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(voucherCode)}`}
                 alt="QR Code"
@@ -74,8 +105,29 @@ const VoucherModal = ({ open, onOpenChange, voucherCode, protocolNumber, rewardN
             </div>
           </div>
 
+          {/* Countdown section */}
+          {expiresAt && (
+            <div className={`py-2 px-3 rounded-xl border flex items-center justify-center gap-2 ${
+              isExpired ? 'bg-red-500/10 border-red-500/20 text-red-600' : 'bg-orange-500/10 border-orange-500/20 text-orange-600'
+            }`}>
+              <Clock className="h-4 w-4" />
+              <span className="text-[11px] font-bold uppercase tracking-wider">{timeLeft}</span>
+            </div>
+          )}
+
+          {/* Fixed location instruction */}
+          <div className="p-4 bg-muted/30 border border-border rounded-xl space-y-1 mt-4">
+            <div className="flex items-center gap-2 text-foreground font-semibold mb-1">
+              <MapPin className="h-4 w-4 text-primary" />
+              <span className="text-xs">Local de Retirada / Resgate</span>
+            </div>
+            <p className="text-[11px] text-foreground/80 font-medium leading-relaxed">
+              Resgate o seu voucher na <strong>TVG Multi</strong> - Rua São Francisco, nº573, Apto 2 - Centro.
+            </p>
+          </div>
+
           {/* Details */}
-          <div className="space-y-2">
+          <div className="space-y-2 mt-4 pt-4 border-t border-border/50">
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Protocolo</span>
               <span className="font-mono font-semibold text-foreground">{protocolNumber}</span>
