@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Gift, Star, Loader2, Trophy, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -32,12 +32,10 @@ const RewardsTab = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  useEffect(() => { fetchAll(); }, [user]);
-
-  const fetchAll = async () => {
+  const fetchAll = useCallback(async () => {
     const [rewardsRes, rankingRes] = await Promise.all([
       supabase.from('rewards').select('*').eq('is_active', true).order('points_cost'),
-      supabase.from('profiles').select('display_name, total_points, user_id').order('total_points', { ascending: false }).limit(10),
+      supabase.from('profiles').select('display_name, total_points, user_id').order('total_points', { ascending: false }),
     ]);
     setRewards((rewardsRes.data as Reward[]) || []);
     setRanking((rankingRes.data as RankEntry[]) || []);
@@ -47,7 +45,9 @@ const RewardsTab = () => {
       setUserPoints(profile?.total_points || 0);
     }
     setLoading(false);
-  };
+  }, [user]);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const handleRedeem = async (reward: Reward) => {
     if (!user) { navigate('/login'); return; }
@@ -65,7 +65,8 @@ const RewardsTab = () => {
       return;
     }
 
-    const result = data as any;
+    type RedeemResult = { remaining_points: number; voucher_code: string; protocol_number: string };
+    const result = data as RedeemResult;
     setUserPoints(result.remaining_points);
     setVoucherModal({
       open: true,
@@ -145,12 +146,15 @@ const RewardsTab = () => {
 
           {/* Ranking */}
           <section className="px-4">
-            <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] mb-3 px-1">🏆 Ranking de Ouvintes</h2>
-            <div className="space-y-2">
+            <div className="flex items-center justify-between mb-3 px-1">
+              <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em]">🏆 Ranking de Ouvintes</h2>
+              <span className="text-[10px] text-muted-foreground">{ranking.length} ouvintes</span>
+            </div>
+            <div className="space-y-2 overflow-y-auto pr-1" style={{ maxHeight: '480px' }}>
               {ranking.map((entry, i) => (
-                <motion.div key={entry.user_id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}
+                <motion.div key={entry.user_id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: Math.min(i * 0.04, 0.4) }}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${entry.user_id === user?.id ? 'bg-primary/5 border-primary/20' : 'bg-card/50 border-white/[0.04]'}`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${i < 3 ? 'bg-amber-500/20 text-amber-500' : 'bg-muted text-muted-foreground'}`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${i < 3 ? 'bg-amber-500/20 text-amber-500' : 'bg-muted text-muted-foreground'}`}>
                     {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -159,7 +163,7 @@ const RewardsTab = () => {
                       {entry.user_id === user?.id && <span className="text-[9px] text-primary ml-1">(você)</span>}
                     </p>
                   </div>
-                  <span className="text-xs font-bold text-primary">{entry.total_points} pts</span>
+                  <span className="text-xs font-bold text-primary flex-shrink-0">{entry.total_points} pts</span>
                 </motion.div>
               ))}
             </div>
