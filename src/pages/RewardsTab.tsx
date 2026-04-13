@@ -46,7 +46,7 @@ const RewardsTab = () => {
   const fetchAll = useCallback(async () => {
     const [rewardsRes, rankingRes] = await Promise.all([
       supabase.from('rewards').select('*').eq('is_active', true).order('points_cost'),
-      supabase.from('profiles').select('display_name, total_points, user_id').order('total_points', { ascending: false }).order('total_listening_minutes', { ascending: false }).order('created_at', { ascending: true }),
+      supabase.from('profiles').select('display_name, total_points, user_id').order('total_points', { ascending: false }).order('total_listening_minutes', { ascending: false }).order('created_at', { ascending: true }).limit(3),
     ]);
     setRewards((rewardsRes.data as Reward[]) || []);
     setRanking((rankingRes.data as RankEntry[]) || []);
@@ -186,8 +186,8 @@ const RewardsTab = () => {
           {/* Ranking */}
           <section className="px-4">
             <div className="flex items-center justify-between mb-3 px-1">
-              <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em]">🏆 Ranking de Ouvintes</h2>
-              <span className="text-[10px] text-muted-foreground">{ranking.length} ouvintes</span>
+              <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em]">🏆 Top 3 Ouvintes</h2>
+              <span className="text-[10px] text-muted-foreground">Melhores Pontuadores</span>
             </div>
             <div className="space-y-2 overflow-y-auto pr-2 scrollbar-thin" style={{ maxHeight: '480px' }}>
               {ranking.map((entry, i) => (
