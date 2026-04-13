@@ -27,6 +27,7 @@ interface RankEntry {
   display_name: string;
   total_points: number;
   user_id: string;
+  avatar_url?: string;
 }
 
 const RewardsTab = () => {
@@ -46,7 +47,7 @@ const RewardsTab = () => {
   const fetchAll = useCallback(async () => {
     const [rewardsRes, rankingRes] = await Promise.all([
       supabase.from('rewards').select('*').eq('is_active', true).order('points_cost'),
-      supabase.from('profiles').select('display_name, total_points, user_id').order('total_points', { ascending: false }).order('total_listening_minutes', { ascending: false }).order('created_at', { ascending: true }).limit(3),
+      supabase.from('profiles').select('display_name, total_points, user_id, avatar_url').order('total_points', { ascending: false }).order('total_listening_minutes', { ascending: false }).order('created_at', { ascending: true }).limit(3),
     ]);
     setRewards((rewardsRes.data as Reward[]) || []);
     setRanking((rankingRes.data as RankEntry[]) || []);
@@ -183,28 +184,90 @@ const RewardsTab = () => {
             )}
           </section>
 
-          {/* Ranking */}
-          <section className="px-4">
-            <div className="flex items-center justify-between mb-3 px-1">
+          {/* Ranking Podium */}
+          <section className="px-4 mb-4">
+            <div className="flex items-center justify-between mb-2 px-1">
               <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em]">🏆 Top 3 Ouvintes</h2>
               <span className="text-[10px] text-muted-foreground">Melhores Pontuadores</span>
             </div>
-            <div className="space-y-2 overflow-y-auto pr-2 scrollbar-thin" style={{ maxHeight: '480px' }}>
-              {ranking.map((entry, i) => (
-                <motion.div key={entry.user_id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: Math.min(i * 0.04, 0.4) }}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${entry.user_id === user?.id ? 'bg-primary/5 border-primary/20' : 'bg-card/50 border-white/[0.04]'}`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${i < 3 ? 'bg-amber-500/20 text-amber-500' : 'bg-muted text-muted-foreground'}`}>
-                    {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">
-                      {entry.display_name || 'Ouvinte'}
-                      {entry.user_id === user?.id && <span className="text-[9px] text-primary ml-1">(você)</span>}
+
+            <div className="relative pt-12 pb-6 px-2 bg-gradient-to-b from-primary/5 to-transparent rounded-3xl border border-white/[0.05] overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+              
+              <div className="flex items-end justify-center gap-3 relative z-10">
+                {/* 2nd Place */}
+                {ranking[1] && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    transition={{ delay: 0.2 }}
+                    className="flex flex-col items-center flex-1 max-w-[100px]"
+                  >
+                    <div className="relative mb-3">
+                      <div className="w-16 h-16 rounded-full border-2 border-slate-300 bg-card overflow-hidden shadow-lg shadow-slate-300/10">
+                        {ranking[1].avatar_url ? (
+                          <img src={ranking[1].avatar_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-slate-100"><User className="h-7 w-7 text-slate-400" /></div>
+                        )}
+                      </div>
+                      <div className="absolute -top-2 -right-1 w-7 h-7 bg-slate-300 rounded-full flex items-center justify-center text-[10px] font-bold text-slate-800 border-2 border-background shadow-sm">2º</div>
+                    </div>
+                    <p className="text-[10px] font-bold text-foreground truncate w-full text-center mb-0.5">{ranking[1].display_name || 'Ouvinte'}</p>
+                    <p className="text-[9px] font-bold text-slate-400">{ranking[1].total_points} pts</p>
+                  </motion.div>
+                )}
+
+                {/* 1st Place */}
+                {ranking[0] && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 30 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    transition={{ delay: 0.1 }}
+                    className="flex flex-col items-center flex-1 max-w-[120px] -mt-8"
+                  >
+                    <div className="relative mb-4">
+                      <div className="absolute -inset-2 bg-amber-500/20 blur-xl rounded-full" />
+                      <div className="w-20 h-20 rounded-full border-[3px] border-amber-500 bg-card overflow-hidden shadow-xl shadow-amber-500/20 relative z-10 animate-pulse-slow">
+                        {ranking[0].avatar_url ? (
+                          <img src={ranking[0].avatar_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-amber-50"><User className="h-9 w-9 text-amber-500" /></div>
+                        )}
+                      </div>
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-9 h-9 bg-amber-500 rounded-full flex items-center justify-center text-xs font-bold text-white border-2 border-background shadow-lg z-20">1º</div>
+                    </div>
+                    <p className="text-xs font-bold text-foreground truncate w-full text-center mb-0.5">
+                      {ranking[0].display_name || 'Ouvinte'}
+                      {ranking[0].user_id === user?.id && <span className="text-[8px] text-primary block">(você)</span>}
                     </p>
-                  </div>
-                  <span className="text-xs font-bold text-primary flex-shrink-0">{entry.total_points} pts</span>
-                </motion.div>
-              ))}
+                    <p className="text-xs font-black text-amber-500">{ranking[0].total_points} pts</p>
+                  </motion.div>
+                )}
+
+                {/* 3rd Place */}
+                {ranking[2] && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    transition={{ delay: 0.3 }}
+                    className="flex flex-col items-center flex-1 max-w-[90px]"
+                  >
+                    <div className="relative mb-3">
+                      <div className="w-14 h-14 rounded-full border-2 border-orange-400/60 bg-card overflow-hidden shadow-lg shadow-orange-400/10">
+                        {ranking[2].avatar_url ? (
+                          <img src={ranking[2].avatar_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-orange-50"><User className="h-6 w-6 text-orange-400" /></div>
+                        )}
+                      </div>
+                      <div className="absolute -top-1 -right-1 w-6 h-6 bg-orange-400/80 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-background shadow-sm">3º</div>
+                    </div>
+                    <p className="text-[10px] font-bold text-foreground truncate w-full text-center mb-0.5">{ranking[2].display_name || 'Ouvinte'}</p>
+                    <p className="text-[9px] font-bold text-orange-400/80">{ranking[2].total_points} pts</p>
+                  </motion.div>
+                )}
+              </div>
             </div>
           </section>
         </>
